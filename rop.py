@@ -5,7 +5,7 @@ import pygtrie
 max_inst_len = 15
 instr_trie = pygtrie.StringTrie()
 
-code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
+code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
 bitstring = code.hex()
 
 # initialize python class for capstone
@@ -33,6 +33,13 @@ def is_instr_boring(disas_instr):
     return False
 
 
+def is_gadget_duplicate(trie_key, disas_instr):
+    orig_key = trie_key[:-2]
+    if instr_trie.has_key(orig_key):
+        if instr_trie[orig_key] == get_instr_str(disas_instr):
+            return True
+    return False
+
 # MISSING: check if instr is boring
 def build_from(pos, parent):
     for step in range(1, max_inst_len):
@@ -52,8 +59,8 @@ def build_from(pos, parent):
         # want only to extract single instructions
         # TODO: add boring instr check here as well
         if num_instr == 1:
-            if not is_instr_boring(disas_instr):
-                trie_key = parent + "/" + instr.hex()
+            trie_key = parent + "/" + instr.hex()
+            if not is_instr_boring(disas_instr) and not is_gadget_duplicate(trie_key, disas_instr):
                 instr_trie[trie_key] = get_instr_str(disas_instr)
                 build_from(pos - step + 1, trie_key)
 
