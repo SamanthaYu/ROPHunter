@@ -5,7 +5,7 @@ import pygtrie
 max_inst_len = 15
 instr_trie = pygtrie.StringTrie()
 
-code = b"\xf7\xc7\x07\x00\xc9\xc3\x00\x00\x0f\xc9\xc3\x95\x45\xc3"
+code = b"\xf7\x5d\xc3\xc7\x07\x00\xc9\xc3\x00\x00\x0f\xc9\xc3\x95\x45\xc3"
 bitstring = code.hex()
 
 
@@ -42,7 +42,7 @@ def is_instr_boring(disas_instr):
         prev_inst = disas_instr.mnemonic
         return True
 
-    if disas_instr.mnemonic == "pop ebp" and prev_inst == "ret":
+    if get_instr_str(disas_instr) == "pop rbp" and prev_inst == "ret":
         prev_inst = disas_instr.mnemonic
         return True
 
