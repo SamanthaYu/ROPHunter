@@ -48,8 +48,6 @@ def is_instr_boring(disas_instr):
 
     prev_inst = disas_instr.mnemonic
 
-
-
     return False
 
 
