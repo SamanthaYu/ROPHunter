@@ -5,8 +5,9 @@ import pygtrie
 max_inst_len = 15
 instr_trie = pygtrie.StringTrie()
 
-code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
+code = b"\xf7\xc7\x07\x00\xc9\xc3\x00\x00\x0f\x95\x45\xc3"
 bitstring = code.hex()
+
 
 # initialize python class for capstone
 md = Cs(CS_ARCH_X86, CS_MODE_64)
@@ -27,9 +28,25 @@ def get_instr_str(disas_instr):
     return disas_instr.mnemonic + " " + disas_instr.op_str;
 
 
+
+prev_inst = "0"
+
 def is_instr_boring(disas_instr):
-    if disas_instr.mnemonic == "ret":
+    global prev_inst
+
+    if disas_instr.mnemonic == "ret" or disas_instr.mnemonic == "jmp":
+        prev_inst = disas_instr
         return True
+
+    if disas_instr.mnemonic == "ret" and prev_inst == "leave" :
+        prev_inst = disas_instr
+        return True
+
+    if disas_instr.mnemonic == "ret" and prev_inst == "pop ebp" :
+        prev_inst = disas_instr
+        return True
+
+    prev_inst = disas_instr
     return False
 
 
@@ -40,6 +57,7 @@ def build_from(pos, parent):
         if pos - step < 0:
             continue
 
+
         num_instr = 0
         for i in md.disasm(instr, 0x1000):
             # print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
@@ -48,7 +66,7 @@ def build_from(pos, parent):
             if num_instr > 1:
                 break
 
-        # this part will only be entered if disasm finds valid instructions
+        #this part will only be entered if disasm finds valid instructions
         # want only to extract single instructions
         # TODO: add boring instr check here as well
         if num_instr == 1:
