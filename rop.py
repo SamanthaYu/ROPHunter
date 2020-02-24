@@ -5,7 +5,7 @@ import pygtrie
 max_inst_len = 15
 instr_trie = pygtrie.StringTrie()
 
-code = b"\xf7\xc7\x07\x00\xc9\xc3\x00\x00\x0f\x95\x45\xc3"
+code = b"\xf7\xc7\x07\x00\xc9\xc3\x00\x00\x0f\xc9\xc3\x95\x45\xc3"
 bitstring = code.hex()
 
 
@@ -34,22 +34,22 @@ prev_inst = "0"
 def is_instr_boring(disas_instr):
     global prev_inst
 
-    print(disas_instr.mnemonic)
-
     if disas_instr.mnemonic == "ret" or disas_instr.mnemonic == "jmp":
-        prev_inst = disas_instr
+        prev_inst = disas_instr.mnemonic
         return True
 
-    if disas_instr.mnemonic == "ret" and prev_inst.mnemonic == "leave" :
-        prev_inst = disas_instr
+    if disas_instr.mnemonic == "leave" and prev_inst == "ret":
+        prev_inst = disas_instr.mnemonic
         return True
 
-    if disas_instr.mnemonic == "ret" and prev_inst.mnemonic == "pop ebp" :
-        prev_inst = disas_instr
+    if disas_instr.mnemonic == "pop ebp" and prev_inst == "ret":
+        prev_inst = disas_instr.mnemonic
         return True
 
-    prev_inst = disas_instr
-    #print(prev_inst.mnemonic)
+    prev_inst = disas_instr.mnemonic
+
+
+
     return False
 
 
@@ -82,11 +82,13 @@ def build_from(pos, parent):
 def galileo():
     # place root c3 in the trie (key: c3, value: ret)
     instr_trie["c3"] = "ret"
+    global prev_inst
 
     for i in range(0, len(code)):
         print("byte is ", code[i:i+1].hex())
 
         if code[i:i+1] == b"\xc3":
+            prev_inst = "ret"
             print("found ret")
             build_from(i + 1, "c3")
 
