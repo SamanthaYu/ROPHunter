@@ -34,19 +34,22 @@ prev_inst = "0"
 def is_instr_boring(disas_instr):
     global prev_inst
 
+    print(disas_instr.mnemonic)
+
     if disas_instr.mnemonic == "ret" or disas_instr.mnemonic == "jmp":
         prev_inst = disas_instr
         return True
 
-    if disas_instr.mnemonic == "ret" and prev_inst == "leave" :
+    if disas_instr.mnemonic == "ret" and prev_inst.mnemonic == "leave" :
         prev_inst = disas_instr
         return True
 
-    if disas_instr.mnemonic == "ret" and prev_inst == "pop ebp" :
+    if disas_instr.mnemonic == "ret" and prev_inst.mnemonic == "pop ebp" :
         prev_inst = disas_instr
         return True
 
     prev_inst = disas_instr
+    #print(prev_inst.mnemonic)
     return False
 
 
