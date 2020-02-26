@@ -5,11 +5,14 @@ import pygtrie
 max_inst_len = 15
 instr_trie = pygtrie.StringTrie()
 
-code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
-bitstring = code.hex()
-
 # initialize python class for capstone
 md = Cs(CS_ARCH_X86, CS_MODE_64)
+
+
+def read_binary(file_path):
+    with open(file_path, "rb") as f:
+        binary_file = f.read()
+    return binary_file
 
 
 # print all gadgets in the trie
@@ -24,7 +27,11 @@ def print_gadgets():
 
 
 def get_instr_str(disas_instr):
-    return disas_instr.mnemonic + " " + disas_instr.op_str;
+    return disas_instr.mnemonic + " " + disas_instr.op_str
+
+
+def get_instr_trie():
+    return instr_trie
 
 
 def is_instr_boring(disas_instr):
@@ -40,8 +47,9 @@ def is_gadget_duplicate(trie_key, disas_instr):
             return True
     return False
 
+
 # MISSING: check if instr is boring
-def build_from(pos, parent):
+def build_from(code, pos, parent):
     for step in range(1, max_inst_len):
         instr = code[pos - step : pos - 1]
         if pos - step < 0:
@@ -62,10 +70,10 @@ def build_from(pos, parent):
             trie_key = parent + "/" + instr.hex()
             if not is_instr_boring(disas_instr) and not is_gadget_duplicate(trie_key, disas_instr):
                 instr_trie[trie_key] = get_instr_str(disas_instr)
-                build_from(pos - step + 1, trie_key)
+                build_from(code, pos - step + 1, trie_key)
 
 
-def galileo():
+def galileo(code):
     # place root c3 in the trie (key: c3, value: ret)
     instr_trie["c3"] = "ret"
 
@@ -74,9 +82,12 @@ def galileo():
 
         if code[i:i+1] == b"\xc3":
             print("found ret")
-            build_from(i + 1, "c3")
-
+            build_from(code, i + 1, "c3")
+    return instr_trie
 
 if __name__ == "__main__":
-    galileo()
+    # code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
+    code = read_binary("/lib/x86_64-linux-gnu/libc.so.6")
+
+    galileo(code)
     print_gadgets()
