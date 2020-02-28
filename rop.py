@@ -5,8 +5,9 @@ import pygtrie
 max_inst_len = 15
 instr_trie = pygtrie.StringTrie()
 
-code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
+code = b"\xf7\x5d\xc3\xc7\x07\x00\xc9\xc3\x00\x00\x0f\xc9\xc3\x95\x45\xc3"
 bitstring = code.hex()
+
 
 # initialize python class for capstone
 md = Cs(CS_ARCH_X86, CS_MODE_64)
@@ -27,9 +28,26 @@ def get_instr_str(disas_instr):
     return disas_instr.mnemonic + " " + disas_instr.op_str;
 
 
+
+prev_inst = "0"
+
 def is_instr_boring(disas_instr):
-    if disas_instr.mnemonic == "ret":
+    global prev_inst
+
+    if disas_instr.mnemonic == "ret" or disas_instr.mnemonic == "jmp":
+        prev_inst = disas_instr.mnemonic
         return True
+
+    if disas_instr.mnemonic == "leave" and prev_inst == "ret":
+        prev_inst = disas_instr.mnemonic
+        return True
+
+    if get_instr_str(disas_instr) == "pop rbp" and prev_inst == "ret":
+        prev_inst = disas_instr.mnemonic
+        return True
+
+    prev_inst = disas_instr.mnemonic
+
     return False
 
 
@@ -40,6 +58,7 @@ def build_from(pos, parent):
         if pos - step < 0:
             continue
 
+
         num_instr = 0
         for i in md.disasm(instr, 0x1000):
             # print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
@@ -48,7 +67,7 @@ def build_from(pos, parent):
             if num_instr > 1:
                 break
 
-        # this part will only be entered if disasm finds valid instructions
+        #this part will only be entered if disasm finds valid instructions
         # want only to extract single instructions
         # TODO: add boring instr check here as well
         if num_instr == 1:
@@ -61,11 +80,13 @@ def build_from(pos, parent):
 def galileo():
     # place root c3 in the trie (key: c3, value: ret)
     instr_trie["c3"] = "ret"
+    global prev_inst
 
     for i in range(0, len(code)):
         print("byte is ", code[i:i+1].hex())
 
         if code[i:i+1] == b"\xc3":
+            prev_inst = "ret"
             print("found ret")
             build_from(i + 1, "c3")
 
