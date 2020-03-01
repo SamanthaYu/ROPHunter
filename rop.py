@@ -1,8 +1,10 @@
+import binascii
 from capstone import *
 import pygtrie
 
 # max instr length on x86_64
 max_inst_len = 15
+max_inst_per_gadget = 3
 instr_trie = pygtrie.StringTrie()
 
 # initialize python class for capstone
@@ -10,8 +12,11 @@ md = Cs(CS_ARCH_X86, CS_MODE_64)
 
 
 def read_binary(file_path):
+    # TODO: Read only the executable segment (We're currently parsing the ELF headers as well)
     with open(file_path, "rb") as f:
         binary_file = f.read()
+    print(''.join([r'\x{:02x}'.format(c) for c in binary_file]))
+    # print(binascii.hexlify(binary_file))
     return binary_file
 
 
@@ -52,6 +57,9 @@ def is_gadget_duplicate(trie_key, disas_instr):
 def build_from(code, pos, parent):
     for step in range(1, max_inst_len):
         instr = code[pos - step : pos - 1]
+        if pos - step >= pos - 1:
+            continue
+
         if pos - step < 0:
             continue
 
@@ -68,6 +76,11 @@ def build_from(code, pos, parent):
         # TODO: add boring instr check here as well
         if num_instr == 1:
             trie_key = parent + "/" + instr.hex()
+
+            # If we don't restrict the number of instructions per gadget, the number of paths to explore will explode
+            if trie_key.count('/') > max_inst_per_gadget:
+                break
+
             if not is_instr_boring(disas_instr) and not is_gadget_duplicate(trie_key, disas_instr):
                 instr_trie[trie_key] = get_instr_str(disas_instr)
                 build_from(code, pos - step + 1, trie_key)
@@ -76,13 +89,16 @@ def build_from(code, pos, parent):
 def galileo(code):
     # place root c3 in the trie (key: c3, value: ret)
     instr_trie["c3"] = "ret"
+    print(len(code))
 
     for i in range(0, len(code)):
-        print("byte is ", code[i:i+1].hex())
+        # print(binascii.hexlify(code[i:i+1]))
+        # print("byte is ", code[i:i+1].hex())
 
         if code[i:i+1] == b"\xc3":
-            print("found ret")
+            print("found ret: " + str(i))
             build_from(code, i + 1, "c3")
+
     return instr_trie
 
 if __name__ == "__main__":
