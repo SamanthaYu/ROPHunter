@@ -45,7 +45,7 @@ def get_inst_trie():
 prev_inst = "0"
 
 
-def is_instr_boring(disas_instr):
+def is_inst_boring(disas_instr):
     global prev_inst
 
     if disas_instr.mnemonic == "ret" or disas_instr.mnemonic == "jmp":
@@ -56,7 +56,7 @@ def is_instr_boring(disas_instr):
         prev_inst = disas_instr.mnemonic
         return True
 
-    if get_instr_str(disas_instr) == "pop rbp" and prev_inst == "ret":
+    if get_inst_str(disas_instr) == "pop rbp" and prev_inst == "ret":
         prev_inst = disas_instr.mnemonic
         return True
 
@@ -91,7 +91,7 @@ def build_from(code, pos, parent):
             if num_inst > 1:
                 break
 
-        #this part will only be entered if disasm finds valid instructions
+        # this part will only be entered if disasm finds valid instructions
         # want only to extract single instructions
         # TODO: add boring inst check here as well
         if num_inst == 1:
