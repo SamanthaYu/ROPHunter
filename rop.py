@@ -20,15 +20,17 @@ def read_binary(file_path):
     return binary_file
 
 
-# print all gadgets in the trie
-def print_gadgets():
+# write all gadgets in the trie to the file, f
+def write_gadgets(f):
     for key in instr_trie.keys():
+        gadget_str = ""
         if not instr_trie.has_subtrie(key):
             prefixes = instr_trie.prefixes(key)
-            print(key, end="")
+            gadget_str += key
             for prefix in prefixes:
-                print(" | " + prefix.value, end="")
-            print()
+                gadget_str = gadget_str + " | " + prefix.value
+            gadget_str += "\n"
+        f.write(gadget_str)
 
 
 def get_instr_str(disas_instr):
@@ -89,7 +91,7 @@ def build_from(code, pos, parent):
 def galileo(code):
     # place root c3 in the trie (key: c3, value: ret)
     instr_trie["c3"] = "ret"
-    print(len(code))
+    print("Code len: " + str(len(code)))
 
     for i in range(0, len(code)):
         # print(binascii.hexlify(code[i:i+1]))
@@ -106,4 +108,7 @@ if __name__ == "__main__":
     code = read_binary("/lib/x86_64-linux-gnu/libc.so.6")
 
     galileo(code)
-    print_gadgets()
+
+    print("Writing gadgets to file")
+    with open("gadgets/libc.txt", "w+") as f:
+        write_gadgets(f)
