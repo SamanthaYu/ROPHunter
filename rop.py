@@ -7,6 +7,7 @@ max_inst_len = 15
 max_inst_per_gadget = 3
 inst_trie = pygtrie.StringTrie()
 
+
 # initialize python class for capstone
 md = Cs(CS_ARCH_X86, CS_MODE_64)
 
@@ -40,10 +41,27 @@ def get_inst_str(disas_inst):
 def get_inst_trie():
     return inst_trie
 
+  
+prev_inst = "0"
 
-def is_inst_boring(disas_inst):
-    if disas_inst.mnemonic == "ret":
+
+def is_instr_boring(disas_instr):
+    global prev_inst
+
+    if disas_instr.mnemonic == "ret" or disas_instr.mnemonic == "jmp":
+        prev_inst = disas_instr.mnemonic
         return True
+
+    if disas_instr.mnemonic == "leave" and prev_inst == "ret":
+        prev_inst = disas_instr.mnemonic
+        return True
+
+    if get_instr_str(disas_instr) == "pop rbp" and prev_inst == "ret":
+        prev_inst = disas_instr.mnemonic
+        return True
+
+    prev_inst = disas_instr.mnemonic
+
     return False
 
 
@@ -73,7 +91,7 @@ def build_from(code, pos, parent):
             if num_inst > 1:
                 break
 
-        # this part will only be entered if disasm finds valid instructions
+        #this part will only be entered if disasm finds valid instructions
         # want only to extract single instructions
         # TODO: add boring inst check here as well
         if num_inst == 1:
