@@ -14,7 +14,6 @@ class ROPTest(unittest.TestCase):
 
         self.assertCountEqual(actual_trie.items(), expected_trie.items())
 
-
     # Uses the example instruction from the paper, "Geometry of Innocent Flesh on the Bone"
     def test_valid_inst(self):
         code = b"\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"

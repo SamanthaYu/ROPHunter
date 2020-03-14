@@ -1,5 +1,5 @@
-import binascii
 from capstone import *
+from elftools.elf.elffile import ELFFile
 import pygtrie
 
 # max inst length on x86_64
@@ -15,10 +15,11 @@ md = Cs(CS_ARCH_X86, CS_MODE_64)
 def read_binary(file_path):
     # TODO: Read only the executable segment (We're currently parsing the ELF headers as well)
     with open(file_path, "rb") as f:
-        binary_file = f.read()
-    print(''.join([r'\x{:02x}'.format(c) for c in binary_file]))
+        binary_file = ELFFile(f)
+        code = binary_file.get_section_by_name('.text').data()
+        print(''.join([r'\x{:02x}'.format(c) for c in code]))
     # print(binascii.hexlify(binary_file))
-    return binary_file
+    return code
 
 
 # write all gadgets in the trie to a file
@@ -74,7 +75,7 @@ def is_gadget_duplicate(trie_key, disas_inst):
 
 
 # MISSING: check if inst is boring
-def build_from(code, pos, parent):
+def build_from(code, pos, parent, offset):
     for step in range(1, max_inst_len):
         inst = code[pos - step : pos - 1]
         if pos - step >= pos - 1:
@@ -85,7 +86,7 @@ def build_from(code, pos, parent):
 
         num_inst = 0
         for i in md.disasm(inst, 0x1000):
-            # print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
+            print("0x%x:\t%s\t%s" %(i.address + offset, i.mnemonic, i.op_str))
             disas_inst = i
             num_inst += 1
             if num_inst > 1:
@@ -103,7 +104,7 @@ def build_from(code, pos, parent):
 
             if not is_inst_boring(disas_inst) and not is_gadget_duplicate(trie_key, disas_inst):
                 inst_trie[trie_key] = get_inst_str(disas_inst)
-                build_from(code, pos - step + 1, trie_key)
+                build_from(code, pos - step + 1, trie_key, offset)
 
 
 def galileo(code):
@@ -117,13 +118,16 @@ def galileo(code):
 
         if code[i:i+1] == b"\xc3":
             print("found ret: " + str(i))
-            build_from(code, i + 1, "c3")
+
+            # TODO: Fix this offset (i.e. Use offset of libc)
+            build_from(code, i + 1, "c3", i)
 
     return inst_trie
 
 
 if __name__ == "__main__":
     # code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
+    # code = read_binary("examples/bof")
     code = read_binary("/lib/x86_64-linux-gnu/libc.so.6")
 
     galileo(code)
