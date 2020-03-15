@@ -37,7 +37,7 @@ class ROPGadget:
             gadget_str = ""
             if not self.inst_trie.has_subtrie(key):
                 prefixes = self.inst_trie.prefixes(key)
-                gadget_str += key
+                gadget_str = self.inst_addr_dict[key] + ": "+ key
                 for prefix in prefixes:
                     gadget_str = gadget_str + " | " + prefix.value
                 gadget_str += "\n"
@@ -127,7 +127,6 @@ if __name__ == "__main__":
     rop_gadget = ROPGadget()
 
     # code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
-    # code = read_binary("examples/bof")
     [start_offset, code] = rop_gadget.read_binary("/lib/x86_64-linux-gnu/libc.so.6")
 
     rop_gadget.galileo(start_offset, code)
