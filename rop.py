@@ -6,6 +6,7 @@ import pygtrie
 max_inst_len = 15
 max_inst_per_gadget = 3
 inst_trie = pygtrie.StringTrie()
+inst_addr_dict = dict()
 
 
 # initialize python class for capstone
@@ -13,13 +14,16 @@ md = Cs(CS_ARCH_X86, CS_MODE_64)
 
 
 def read_binary(file_path):
-    # TODO: Read only the executable segment (We're currently parsing the ELF headers as well)
     with open(file_path, "rb") as f:
-        binary_file = ELFFile(f)
-        code = binary_file.get_section_by_name('.text').data()
-        print(''.join([r'\x{:02x}'.format(c) for c in code]))
+        bin_file = ELFFile(f)
+        bin_text = bin_file.get_section_by_name('.text')
+        bin_addr = bin_text["sh_addr"]
+        bin_data = bin_text.data()
+
+        print(bin_addr)
+        print(''.join([r'\x{:02x}'.format(c) for c in bin_data]))
     # print(binascii.hexlify(binary_file))
-    return code
+    return [bin_addr, bin_data]
 
 
 # write all gadgets in the trie to a file
@@ -42,7 +46,11 @@ def get_inst_str(disas_inst):
 def get_inst_trie():
     return inst_trie
 
-  
+
+def get_inst_addr_dict():
+    return inst_addr_dict
+
+
 prev_inst = "0"
 
 
@@ -75,7 +83,7 @@ def is_gadget_duplicate(trie_key, disas_inst):
 
 
 # MISSING: check if inst is boring
-def build_from(code, pos, parent, offset):
+def build_from(code, pos, parent, ret_offset):
     for step in range(1, max_inst_len):
         inst = code[pos - step : pos - 1]
         if pos - step >= pos - 1:
@@ -85,8 +93,8 @@ def build_from(code, pos, parent, offset):
             continue
 
         num_inst = 0
-        for i in md.disasm(inst, 0x1000):
-            print("0x%x:\t%s\t%s" %(i.address + offset, i.mnemonic, i.op_str))
+        for i in md.disasm(inst, ret_offset - step + 1):
+            print("0x%x:\t%s\t%s\t%s" %(i.address, inst, i.mnemonic, i.op_str))
             disas_inst = i
             num_inst += 1
             if num_inst > 1:
@@ -94,7 +102,6 @@ def build_from(code, pos, parent, offset):
 
         # this part will only be entered if disasm finds valid instructions
         # want only to extract single instructions
-        # TODO: add boring inst check here as well
         if num_inst == 1:
             trie_key = parent + "/" + inst.hex()
 
@@ -104,10 +111,11 @@ def build_from(code, pos, parent, offset):
 
             if not is_inst_boring(disas_inst) and not is_gadget_duplicate(trie_key, disas_inst):
                 inst_trie[trie_key] = get_inst_str(disas_inst)
-                build_from(code, pos - step + 1, trie_key, offset)
+                inst_addr_dict[trie_key] = hex(disas_inst.address)
+                build_from(code, pos - step + 1, trie_key, disas_inst.address)
 
 
-def galileo(code):
+def galileo(start_offset, code):
     # place root c3 in the trie (key: c3, value: ret)
     inst_trie["c3"] = "ret"
     print("Code len: " + str(len(code)))
@@ -118,9 +126,7 @@ def galileo(code):
 
         if code[i:i+1] == b"\xc3":
             print("found ret: " + str(i))
-
-            # TODO: Fix this offset (i.e. Use offset of libc)
-            build_from(code, i + 1, "c3", i)
+            build_from(code, i + 1, "c3", start_offset + i)
 
     return inst_trie
 
@@ -128,10 +134,10 @@ def galileo(code):
 if __name__ == "__main__":
     # code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
     # code = read_binary("examples/bof")
-    code = read_binary("/lib/x86_64-linux-gnu/libc.so.6")
+    [start_offset, code] = read_binary("/lib/x86_64-linux-gnu/libc.so.6")
 
-    galileo(code)
+    galileo(start_offset, code)
 
-    print("Writing gadgets to file")
-    with open("gadgets/libc.txt", "w+") as f:
-        write_gadgets(f)
+    # print("Writing gadgets to file")
+    # with open("gadgets/libc.txt", "w+") as f:
+    #     write_gadgets(f)
