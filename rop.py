@@ -1,6 +1,7 @@
 from capstone import *
 from elftools.elf.elffile import ELFFile
 import pygtrie
+import sys
 
 
 class ROPGadget:
@@ -126,11 +127,17 @@ class ROPGadget:
 if __name__ == "__main__":
     rop_gadget = ROPGadget()
 
+    if len(sys.argv) < 2:
+        sys.exit("The file path of libc is not provided")
+
+    libc_path = sys.argv[1]
+
     # code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
-    [start_offset, code] = rop_gadget.read_binary("/lib/x86_64-linux-gnu/libc.so.6")
+    [start_offset, code] = rop_gadget.read_binary(libc_path)
 
     rop_gadget.galileo(start_offset, code)
 
-    print("Writing gadgets to file")
-    with open("gadgets/libc.txt", "w+") as f:
+    gadgets_path = "gadgets/libc.txt"
+    print("Writing gadgets to file: " + gadgets_path)
+    with open(gadgets_path, "w+") as f:
         rop_gadget.write_gadgets(f)
