@@ -9,6 +9,8 @@ class ROPGadget:
         self.max_inst_len = 15
         self.max_inst_per_gadget = 3
         self.inst_trie = pygtrie.StringTrie()
+
+        # Used to keep track of the starting addresses of the gadgets
         self.inst_addr_dict = dict()
 
         # initialize python class for capstone
@@ -16,7 +18,6 @@ class ROPGadget:
 
         # Initialize prev_inst to null; used to find boring instructions
         self.prev_inst = "0"
-
 
     def read_binary(self, file_path):
         with open(file_path, "rb") as f:
@@ -65,7 +66,6 @@ class ROPGadget:
             return True
 
         self.prev_inst = disas_instr.mnemonic
-
         return False
 
     def is_gadget_duplicate(self, trie_key, disas_inst):
@@ -117,6 +117,7 @@ class ROPGadget:
 
             if code[i:i+1] == b"\xc3":
                 print("found ret: " + str(i))
+                self.prev_inst = "ret"
                 self.build_from(code, i + 1, "c3", start_offset + i)
 
         return self.inst_trie
