@@ -27,22 +27,20 @@ class ROPGadget:
             bin_addr = bin_text["sh_addr"]
             bin_data = bin_text.data()
 
-            print(bin_addr)
-            print(''.join([r'\x{:02x}'.format(c) for c in bin_data]))
+            # print(bin_addr)
+            # print(''.join([r'\x{:02x}'.format(c) for c in bin_data]))
         # print(binascii.hexlify(binary_file))
         return [bin_addr, bin_data]
 
-    # write all gadgets in the trie to a file
-    def write_gadgets(self, gadget_file):
+    # print all gadgets in the trie
+    def print_gadgets(self):
         for key in self.inst_trie.keys():
-            gadget_str = ""
             if not self.inst_trie.has_subtrie(key):
                 prefixes = self.inst_trie.prefixes(key)
                 gadget_str = self.inst_addr_dict[key] + ": "+ key
                 for prefix in prefixes:
                     gadget_str = gadget_str + " | " + prefix.value
-                gadget_str += "\n"
-            gadget_file.write(gadget_str)
+                print(gadget_str)
 
     def get_inst_str(self, disas_inst):
         return disas_inst.mnemonic + " " + disas_inst.op_str
@@ -87,7 +85,7 @@ class ROPGadget:
 
             num_inst = 0
             for i in self.md.disasm(inst, ret_offset - step + 1):
-                print("0x%x:\t%s\t%s\t%s" %(i.address, inst, i.mnemonic, i.op_str))
+                # print("0x%x:\t%s\t%s\t%s" %(i.address, inst, i.mnemonic, i.op_str))
                 disas_inst = i
                 num_inst += 1
                 if num_inst > 1:
@@ -110,14 +108,12 @@ class ROPGadget:
     def galileo(self, start_offset, code):
         # place root c3 in the trie (key: c3, value: ret)
         self.inst_trie["c3"] = "ret"
-        print("Code len: " + str(len(code)))
 
         for i in range(0, len(code)):
             # print(binascii.hexlify(code[i:i+1]))
             # print("byte is ", code[i:i+1].hex())
 
             if code[i:i+1] == b"\xc3":
-                print("found ret: " + str(i))
                 self.prev_inst = "ret"
                 self.build_from(code, i + 1, "c3", start_offset + i)
 
@@ -136,8 +132,4 @@ if __name__ == "__main__":
     [start_offset, code] = rop_gadget.read_binary(libc_path)
 
     rop_gadget.galileo(start_offset, code)
-
-    gadgets_path = "gadgets/libc.txt"
-    print("Writing gadgets to file: " + gadgets_path)
-    with open(gadgets_path, "w+") as f:
-        rop_gadget.write_gadgets(f)
+    rop_gadget.print_gadgets()
