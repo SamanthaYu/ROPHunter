@@ -28,7 +28,11 @@ info proc mappings
 ```
 python rop.py <libc_path>
 ```
-- The gadgets will be written to `gadgets/libc.txt`
 
 ## How to Create an ROP Chain
 - The addresses of the gadgets are calculated by adding the libc base address with the address of the gadgets
+
+## How to Run ROPgadget
+```
+ROPgadget --binary /lib/x86_64-linux-gnu/libc-2.27.so
+```
