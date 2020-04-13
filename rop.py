@@ -37,9 +37,12 @@ class ROPGadget:
         for key in self.inst_trie.keys():
             if not self.inst_trie.has_subtrie(key):
                 prefixes = self.inst_trie.prefixes(key)
-                gadget_str = self.inst_addr_dict[key] + ": "+ key
+                gadget_str = ""
+
                 for prefix in prefixes:
-                    gadget_str = gadget_str + " | " + prefix.value
+                    gadget_str = prefix.value + " ; " + gadget_str
+
+                gadget_str = self.inst_addr_dict[key] + ": " + key + " | " + gadget_str
                 print(gadget_str)
 
     def get_inst_str(self, disas_inst):
