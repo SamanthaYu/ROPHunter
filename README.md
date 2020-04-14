@@ -34,5 +34,5 @@ python rop.py <libc_path>
 
 ## How to Run ROPgadget
 ```
-ROPgadget --binary /lib/x86_64-linux-gnu/libc-2.27.so
+ROPgadget --binary <libc_path> --rawArch x86 --rawMode 64
 ```
