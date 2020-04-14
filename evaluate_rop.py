@@ -72,7 +72,7 @@ class EvaluateROP:
 
 
 if __name__ == "__main__":
-    arg_parser = argparse.ArgumentParser(description="Evaluate ROP gadgets returned ")
+    arg_parser = argparse.ArgumentParser(description="Evaluate ROP gadgets returned by ROPgadget and ROPHunter")
     arg_parser.add_argument("rop_gadget_path", help="File path containing the gadgets returned by ROPgadget")
     arg_parser.add_argument("rop_hunter_path", help="File path containing the gadgets returned by ROPHunter")
     args = arg_parser.parse_args()
