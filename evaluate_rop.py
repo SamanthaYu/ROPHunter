@@ -1,4 +1,5 @@
-import sys
+import argparse
+
 
 class EvaluateROP:
     def __init__(self):
@@ -69,13 +70,16 @@ class EvaluateROP:
                 false_negatives_file.write(gadget_str)
         false_negatives_file.close()
 
+
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        sys.exit("The ROP gadget files were not provided")
+    arg_parser = argparse.ArgumentParser(description="Evaluate ROP gadgets returned ")
+    arg_parser.add_argument("rop_gadget_path", help="File path containing the gadgets returned by ROPgadget")
+    arg_parser.add_argument("rop_hunter_path", help="File path containing the gadgets returned by ROPHunter")
+    args = arg_parser.parse_args()
 
     evaluate_rop = EvaluateROP()
-    evaluate_rop.rop_gadget_path = sys.argv[1]
-    evaluate_rop.rop_hunter_path = sys.argv[2]
+    evaluate_rop.rop_gadget_path = args.rop_gadget_path
+    evaluate_rop.rop_hunter_path = args.rop_hunter_path
 
     evaluate_rop.parse_rop_gadget_file()
     evaluate_rop.parse_rop_hunter_file()

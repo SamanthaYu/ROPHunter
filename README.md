@@ -1,12 +1,29 @@
-# CMPT 479 Project - ROP Gadget Hunter
+# CMPT 479 Project - ROPHunter
 
-## Find Base Address of libc
-- For now, we'll assume that ASLR has been disabled:
+## Setup
+- We'll disable ASLR:
 ```
 sudo sysctl -w kernel.randomize_va_space=0
 ```
 
+- We'll be running the following instructions within a Python virtualenv:
+```
+python3 -m venv venv
+source venv/bin/activate
+```
+
+- Install all necessary requirements:
+```
+pip install -r requirements.txt
+```
+
+## Find Base Address of libc
 - We can find the base address of libc by using gdb on the vulnerable executable:
+```
+gdb examples/vuln
+```
+
+- Inside gdb, we run:
 ```
 b main
 run
@@ -15,18 +32,21 @@ info proc mappings
 
 - gdb will probably return several mappings to libc
 - The mapping with the lowest offset will be the base address of libc
-- e.g. In the below output, we will use `0x7ffff77dd000` as our base address and `/lib/x86_64-linux-gnu/libc-2.27.so` as the path to libc
+- e.g. In the below output, we will use `0xb7e09000` as our base address and `/lib/i386-linux-gnu/libc-2.23.so` as the path to libc
 ```
-          Start Addr           End Addr       Size     Offset objfile
-      0x7ffff77dd000     0x7ffff79c4000   0x1e7000        0x0 /lib/x86_64-linux-gnu/libc-2.27.so
-      0x7ffff79c4000     0x7ffff7bc4000   0x200000   0x1e7000 /lib/x86_64-linux-gnu/libc-2.27.so
-      0x7ffff7bc4000     0x7ffff7bc8000     0x4000   0x1e7000 /lib/x86_64-linux-gnu/libc-2.27.so
-      0x7ffff7bc8000     0x7ffff7bca000     0x2000   0x1eb000 /lib/x86_64-linux-gnu/libc-2.27.so
+	Start Addr   End Addr       Size     Offset objfile
+	0xb7e09000 0xb7fb9000   0x1b0000        0x0 /lib/i386-linux-gnu/libc-2.23.so
+	0xb7fb9000 0xb7fbb000     0x2000   0x1af000 /lib/i386-linux-gnu/libc-2.23.so
+	0xb7fbb000 0xb7fbc000     0x1000   0x1b1000 /lib/i386-linux-gnu/libc-2.23.so
 ```
 
 ## How to Find Gadgets
 ```
-python rop.py <libc_path>
+python3 rop.py <binary> <architecture> <mode>
+```
+For example:
+```
+python3 rop.py /lib/i386-linux-gnu/libc-2.23.so x86 32
 ```
 
 ## How to Create an ROP Chain
@@ -34,5 +54,19 @@ python rop.py <libc_path>
 
 ## How to Run ROPgadget
 ```
-ROPgadget --binary <libc_path> --rawArch x86 --rawMode 64
+ROPgadget --binary <libc_path> --rawArch x86 --rawMode 32
 ```
+
+## How to Evaluate Gadgets Found by ROPgadget vs. ROPHunter
+```
+python3 evaluate_rop.py <ropgadget_path> <rophunter_path>
+```
+
+If we run the following command, it will write the gadgets to `evaluation/`:
+```
+python3 evaluate_rop.py gadgets/x86_32/libc_ropgadget.txt gadgets/x86_32/libc_rophunter.txt
+```
+
+- `matches.txt` and `mismatches.txt` correspond to gadgets that both ROPgadget and ROPHunter found at the same address.
+- `false_positives.txt` refers to gadgets that only ROPHunter found
+- `false_negatives.txt` refers to gadgets that only ROPgadget found

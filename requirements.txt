@@ -1,0 +1,5 @@
+capstone==4.0.1
+pkg-resources==0.0.0
+pyelftools==0.26
+pygtrie==2.3.3
+ROPGadget==6.2

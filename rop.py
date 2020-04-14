@@ -1,12 +1,12 @@
+import argparse
 from capstone import *
 from elftools.elf.elffile import ELFFile
 import pygtrie
-import sys
 
 
 class ROPHunter:
-    def __init__(self):
-        # max inst length on x86_64
+    def __init__(self, arch, mode):
+        # TODO: Customize the max inst length for other achitectures besides x86_64
         self.max_inst_len = 15
         self.max_inst_per_gadget = 3
         self.inst_trie = pygtrie.StringTrie()
@@ -15,7 +15,7 @@ class ROPHunter:
         self.inst_addr_dict = dict()
 
         # initialize python class for capstone
-        self.md = Cs(CS_ARCH_X86, CS_MODE_64)
+        self.md = Cs(arch, mode)
 
         # Initialize prev_inst to null; used to find boring instructions
         self.prev_inst = "0"
@@ -124,15 +124,27 @@ class ROPHunter:
 
 
 if __name__ == "__main__":
-    rop_hunter = ROPHunter()
+    # TODO: Add more architectures
+    arch_dict = {
+        "x86": CS_ARCH_X86
+    }
 
-    if len(sys.argv) < 2:
-        sys.exit("The file path of libc is not provided")
+    mode_dict = {
+        "16": CS_MODE_16,
+        "32": CS_MODE_32,
+        "64": CS_MODE_64
+    }
 
-    libc_path = sys.argv[1]
+    arg_parser = argparse.ArgumentParser(description="Find ROP gadgets within a binary file")
+    arg_parser.add_argument("binary", help="File path of the binary executable")
+    arg_parser.add_argument("arch", help="Hardware architecture", choices=arch_dict.keys())
+    arg_parser.add_argument("mode", help="Hardware mode", choices=mode_dict.keys())
+    args = arg_parser.parse_args()
+
+    rop_hunter = ROPHunter(arch_dict[args.arch], mode_dict[args.mode])
 
     # code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
-    [start_offset, code] = rop_hunter.read_binary(libc_path)
+    [start_offset, code] = rop_hunter.read_binary(args.binary)
 
     rop_hunter.galileo(start_offset, code)
     rop_hunter.print_gadgets()
