@@ -40,7 +40,7 @@ class ROPHunter:
                 gadget_str = ""
 
                 for prefix in prefixes:
-                    gadget_str = prefix.value + " ; " + gadget_str
+                    gadget_str = prefix.value.strip() + " ; " + gadget_str
 
                 gadget_str = self.inst_addr_dict[key] + " : " + key + " | " + gadget_str
                 print(gadget_str)
