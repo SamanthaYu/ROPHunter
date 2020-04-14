@@ -6,7 +6,7 @@
 // BUF_SIZE is the last two digits in your SFU ID.
 // If the last two digits are 00, pick the next significant two digits
 #ifndef BUF_SIZE
-#define BUF_SIZE 24
+#define BUF_SIZE 11
 #endif
 
 int bof(char *str)
