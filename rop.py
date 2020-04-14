@@ -4,7 +4,7 @@ import pygtrie
 import sys
 
 
-class ROPGadget:
+class ROPHunter:
     def __init__(self):
         # max inst length on x86_64
         self.max_inst_len = 15
@@ -40,9 +40,9 @@ class ROPGadget:
                 gadget_str = ""
 
                 for prefix in prefixes:
-                    gadget_str = prefix.value + " ; " + gadget_str
+                    gadget_str = prefix.value.strip() + " ; " + gadget_str
 
-                gadget_str = self.inst_addr_dict[key] + ": " + key + " | " + gadget_str
+                gadget_str = self.inst_addr_dict[key] + " : " + key + " | " + gadget_str
                 print(gadget_str)
 
     def get_inst_str(self, disas_inst):
@@ -124,7 +124,7 @@ class ROPGadget:
 
 
 if __name__ == "__main__":
-    rop_gadget = ROPGadget()
+    rop_hunter = ROPHunter()
 
     if len(sys.argv) < 2:
         sys.exit("The file path of libc is not provided")
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     libc_path = sys.argv[1]
 
     # code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
-    [start_offset, code] = rop_gadget.read_binary(libc_path)
+    [start_offset, code] = rop_hunter.read_binary(libc_path)
 
-    rop_gadget.galileo(start_offset, code)
-    rop_gadget.print_gadgets()
+    rop_hunter.galileo(start_offset, code)
+    rop_hunter.print_gadgets()
