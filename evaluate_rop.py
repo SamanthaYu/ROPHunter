@@ -49,6 +49,26 @@ class EvaluateROP:
         matches_file.close()
         mismatches_file.close()
 
+    def write_false_positives(self):
+        false_positives_file = open("evaluation/false_positives.txt", "w")
+
+        for addr, gadget in self.rop_hunter_dict.items():
+            if addr not in self.rop_gadget_dict:
+                hex_addr = str(hex(addr))
+                gadget_str = hex_addr + " | " + gadget
+                false_positives_file.write(gadget_str)
+        false_positives_file.close()
+
+    def write_false_negatives(self):
+        false_negatives_file = open("evaluation/false_negatives.txt", "w")
+
+        for addr, gadget in self.rop_gadget_dict.items():
+            if addr not in self.rop_hunter_dict:
+                hex_addr = str(hex(addr))
+                gadget_str = hex_addr + " | " + gadget
+                false_negatives_file.write(gadget_str)
+        false_negatives_file.close()
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         sys.exit("The ROP gadget files were not provided")
@@ -59,4 +79,7 @@ if __name__ == "__main__":
 
     evaluate_rop.parse_rop_gadget_file()
     evaluate_rop.parse_rop_hunter_file()
+
     evaluate_rop.write_identical_addr()
+    evaluate_rop.write_false_positives()
+    evaluate_rop.write_false_negatives()
