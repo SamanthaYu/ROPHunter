@@ -31,7 +31,7 @@ class EvaluateROP:
         matches_file = open("evaluation/matches.txt", "w")
         mismatches_file = open("evaluation/mismatches.txt", "w")
 
-        for addr, gadget in self.rop_gadget_dict.items():
+        for addr, gadget in sorted(self.rop_gadget_dict.items()):
             if addr in self.rop_hunter_dict:
                 hex_addr = str(hex(addr))
                 gadget_str = hex_addr + " | " + gadget
@@ -52,7 +52,7 @@ class EvaluateROP:
     def write_false_positives(self):
         false_positives_file = open("evaluation/false_positives.txt", "w")
 
-        for addr, gadget in self.rop_hunter_dict.items():
+        for addr, gadget in sorted(self.rop_hunter_dict.items()):
             if addr not in self.rop_gadget_dict:
                 hex_addr = str(hex(addr))
                 gadget_str = hex_addr + " | " + gadget
@@ -62,7 +62,7 @@ class EvaluateROP:
     def write_false_negatives(self):
         false_negatives_file = open("evaluation/false_negatives.txt", "w")
 
-        for addr, gadget in self.rop_gadget_dict.items():
+        for addr, gadget in sorted(self.rop_gadget_dict.items()):
             if addr not in self.rop_hunter_dict:
                 hex_addr = str(hex(addr))
                 gadget_str = hex_addr + " | " + gadget
