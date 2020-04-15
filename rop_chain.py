@@ -19,10 +19,12 @@ class ROPChain:
         # We store the base address of the entire gadget
         # If we want a subset of this gadget, we will have to calculate this new address
         suffix_num_inst = gadget_suffix.count(";")
+        total_num_inst = gadget_bytes.count("/") + 1    # Add 1 because there is no additional / at the end of a gadget
         bytes_list = gadget_bytes.split("/")
         gadget_offset = 0
 
-        for i in range(suffix_num_inst, 0, -1):
+        for i in range(suffix_num_inst, total_num_inst):
+            print(bytes_list[i] + " => " + str(len(bytes_list[i])))
             gadget_offset += round(len(bytes_list[i]) / 2)
 
         return start_addr + gadget_offset
