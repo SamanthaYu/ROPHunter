@@ -18,29 +18,14 @@ pip install -r requirements.txt
 ```
 
 ## Find Base Address of libc
-- We can find the base address of libc by using gdb on the vulnerable executable:
+- In this attack, we'll assume that libc is not statically linked to the executable
+- We can run `ldd examples/vuln` to find this base address:
 ```
-gdb examples/vuln
+	linux-gate.so.1 =>  (0xb7fd9000)
+	libc.so.6 => /lib/i386-linux-gnu/libc.so.6 (0xb7e09000)
+	/lib/ld-linux.so.2 (0xb7fdb000)
 ```
-
-- Inside gdb, we run:
-```
-b main
-run
-info proc mappings
-```
-
-- gdb will probably return several mappings to libc
-- The mapping with the lowest offset will be the base address of libc
-- e.g. In the below output, we will use `0xb7e09000` as our base address and `/lib/i386-linux-gnu/libc-2.23.so` as the path to libc
-```
-	Start Addr   End Addr       Size     Offset objfile
-	0xb7e09000 0xb7fb9000   0x1b0000        0x0 /lib/i386-linux-gnu/libc-2.23.so
-	0xb7fb9000 0xb7fbb000     0x2000   0x1af000 /lib/i386-linux-gnu/libc-2.23.so
-	0xb7fbb000 0xb7fbc000     0x1000   0x1b1000 /lib/i386-linux-gnu/libc-2.23.so
-```
-
-- Alternatively, we can run `ldd examples/vuln` to find this base address
+In this example, libc's base address is `0xb7e09000`
 
 ## How to Find Gadgets
 ```
@@ -52,7 +37,14 @@ python3 rop.py /lib/i386-linux-gnu/libc-2.23.so x86 32
 ```
 
 ## How to Create an ROP Chain
-- The addresses of the gadgets are calculated by adding the libc base address with the address of the gadgets
+- We create an ROP chain to launch a shell and insert that ROP chain into a buffer overflow in `examples/vuln.c`
+```
+python3 gen_shellcode.py <ropgadgets_path> <libc_offset>
+```
+For example:
+```
+python3 gen_shellcode.py gadgets/x86_32/libc_ropgadget.txt 0xb7e09000
+```
 
 ## How to Run ROPgadget
 ```
@@ -64,11 +56,11 @@ ROPgadget --binary <libc_path> --rawArch x86 --rawMode 32
 python3 evaluate_rop.py <ropgadget_path> <rophunter_path>
 ```
 
-If we run the following command, it will write the gadgets to `evaluation/`:
+For example:
 ```
 python3 evaluate_rop.py gadgets/x86_32/libc_ropgadget.txt gadgets/x86_32/libc_rophunter.txt
 ```
 
-- `matches.txt` and `mismatches.txt` correspond to gadgets that both ROPgadget and ROPHunter found at the same address.
-- `false_positives.txt` refers to gadgets that only ROPHunter found
-- `false_negatives.txt` refers to gadgets that only ROPgadget found
+- `evaluation/matches.txt` and `evaluation/mismatches.txt` correspond to gadgets that both ROPgadget and ROPHunter found at the same address.
+- `evaluation/false_positives.txt` refers to gadgets that only ROPHunter found
+- `evaluation/false_negatives.txt` refers to gadgets that only ROPgadget found
