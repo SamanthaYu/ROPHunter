@@ -1,9 +1,9 @@
-from gen_rop_chain import ROPChain
+from rop_chain import ROPChain
 import unittest
 
 class ROPChainTest(unittest.TestCase):
     def test_get_gadget_addr(self):
-        rop_chain = ROPChain()
+        rop_chain = ROPChain("rop_file")
         start_offset = 0x1000
         gadget_bytes = "c3/9545/000f/0000"
         gadget_suffix = "xchg eax, ebp ; ret ;" # Corresponds to "c3/9545"

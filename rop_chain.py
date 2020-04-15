@@ -1,11 +1,12 @@
 import argparse
 
 class ROPChain:
-    def __init__(self):
+    def __init__(self, rop_hunter_file):
         self.gadget_dict = dict()
+        self.rop_hunter_file = rop_hunter_file
 
-    def parse_gadgets_file(self, rop_hunter_file):
-        with open(rop_hunter_file, "r") as f:
+    def parse_gadgets_file(self):
+        with open(self.rop_hunter_file, "r") as f:
             for line in f:
                 addr, line_no_addr = line.split(" : ", 1)
                 addr_hex = int(addr, 16)
@@ -31,19 +32,9 @@ class ROPChain:
         # Find a gadget containing this suffix
         possible_gadgets = [val for key, val in self.gadget_dict.items() if key.endswith(gadget_suffix)]
         if len(possible_gadgets) < 1:
+            print("Could not find the gadget: " + gadget_suffix)
             return None
 
         possible_gadget = possible_gadgets[0]
         return self.get_gadget_addr(possible_gadget[0], possible_gadget[1], gadget_suffix)
-    
 
-if __name__ == "__main__":
-    arg_parser = argparse.ArgumentParser(description="Create a ROP chain using the gadgets found")
-    arg_parser.add_argument("gadgets", help="File path of the gadgets returned by ROPgadget")
-    args = arg_parser.parse_args()
-
-    rop_chain = ROPChain()
-    rop_chain.parse_gadgets_file(args.gadgets)
-
-    gadget_addr = rop_chain.get_gadget("add byte ptr es:[ecx], dh ; ret ;")
-    print(gadget_addr)

