@@ -87,7 +87,7 @@ class ROPHunter:
                 continue
 
             num_inst = 0
-            for i in self.md.disasm(inst, ret_offset - step + 1):
+            for i in self.md.disasm_lite(inst, ret_offset - step + 1):
                 # print("0x%x:\t%s\t%s\t%s" %(i.address, inst, i.mnemonic, i.op_str))
                 disas_inst = i
                 num_inst += 1
