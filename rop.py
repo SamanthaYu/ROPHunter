@@ -46,7 +46,7 @@ class ROPHunter:
                 print(gadget_str)
 
     def get_inst_str(self, disas_inst):
-        return disas_inst[3] + " " + disas_inst[4]
+        return disas_inst[2] + " " + disas_inst[3]
 
     def get_inst_trie(self):
         return self.inst_trie
@@ -55,19 +55,19 @@ class ROPHunter:
         return self.inst_addr_dict
 
     def is_inst_boring(self, disas_instr):
-        if disas_instr[3] == "ret" or disas_instr[3] == "jmp":
-            self.prev_inst = disas_instr[3]
+        if disas_instr[2] == "ret" or disas_instr[2] == "jmp":
+            self.prev_inst = disas_instr[2]
             return True
 
-        if disas_instr[3] == "leave" and self.prev_inst == "ret":
-            self.prev_inst = disas_instr[3]
+        if disas_instr[2] == "leave" and self.prev_inst == "ret":
+            self.prev_inst = disas_instr[2]
             return True
 
         if self.get_inst_str(disas_instr) == "pop rbp" and self.prev_inst == "ret":
-            self.prev_inst = disas_instr[3]
+            self.prev_inst = disas_instr[2]
             return True
 
-        self.prev_inst = disas_instr[3]
+        self.prev_inst = disas_instr[2]
         return False
 
     def is_gadget_duplicate(self, trie_key, disas_inst):
