@@ -1,6 +1,8 @@
 # CMPT 479 Project - ROPHunter
 
 ## Setup
+- We'll be using the virtual machine from assignment 1: https://vault.sfu.ca/index.php/s/pq2sVjmUlmfBWwl
+
 - We'll disable ASLR:
 ```
 sudo sysctl -w kernel.randomize_va_space=0
@@ -53,6 +55,16 @@ For example:
 python3 gen_shellcode.py gadgets/x86_32/libc_rophunter.txt 0xb7e09000
 ```
 
+### How to Debug this ROP Chain
+- We will be using GDB to verify whether the shellcode works: `gdb examples/vuln`
+```
+b main	# libc only gets loaded after main(), so we have to stop at main() before setting the other breakpoints
+run
+b <Gadget address>
+continue
+```
+If GDB stops at the expected instruction, then we have found the correct gadget.
+Unfortunately, finding the right gadgets for an ROP shell is still trial-and-error. Some gadgets may be invalid, because GDB does not interpret the gadgets in the same way as the Capstone disassembler.
 
 ## How to Run ROPgadget
 ```
