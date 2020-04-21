@@ -51,6 +51,28 @@ For example:
 ```
 python3 gen_shellcode.py gadgets/x86_32/libc_rophunter.txt 0xb7e09000
 ```
+should produce an output: 
+
+```
+020000 => 6
+d7c185c00f8571 => 14
+0xb7f49f8f
+Index: 23 => 0x8f
+Index: 24 => 0x9f
+Index: 25 => 0xf4
+Index: 26 => 0xb7
+08e864ffffff => 12
+0xb7e34c6c
+Index: 27 => 0x6c
+Index: 28 => 0x4c
+Index: 29 => 0xe3
+Index: 30 => 0xb7
+0xb0b0b0b
+Index: 31 => 0xb
+Index: 32 => 0xb
+Index: 33 => 0xb
+Index: 34 => 0xb
+```
 
 ## How to Run ROPgadget
 ```
