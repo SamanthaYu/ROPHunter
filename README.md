@@ -41,6 +41,7 @@ For example:
 ```
 python3 rop.py /lib/i386-linux-gnu/libc-2.23.so x86 32
 ```
+*Warning, this step may take a few minutes* 
 
 ## How to Create an ROP Chain
 - We create an ROP chain to launch a shell and insert that ROP chain into a buffer overflow in `examples/vuln.c`
