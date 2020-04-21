@@ -1,9 +1,9 @@
 import argparse
-from collections import OrderedDict 
+# from collections import OrderedDict 
 
 class ROPChain:
     def __init__(self, rop_hunter_file):
-        self.gadget_dict = OrderedDict()
+        self.gadget_dict = dict()
         self.rop_hunter_file = rop_hunter_file
 
     def parse_gadgets_file(self):

