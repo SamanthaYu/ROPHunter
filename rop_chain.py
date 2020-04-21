@@ -1,8 +1,9 @@
 import argparse
+from collections import OrderedDict 
 
 class ROPChain:
     def __init__(self, rop_hunter_file):
-        self.gadget_dict = dict()
+        self.gadget_dict = OrderedDict()
         self.rop_hunter_file = rop_hunter_file
 
     def parse_gadgets_file(self):
@@ -24,7 +25,6 @@ class ROPChain:
         gadget_offset = 0
 
         for i in range(suffix_num_inst, total_num_inst):
-            print(bytes_list[i] + " => " + str(len(bytes_list[i])))
             gadget_offset += round(len(bytes_list[i]) / 2)
 
         return start_addr + gadget_offset

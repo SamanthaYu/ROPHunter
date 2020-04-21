@@ -39,11 +39,11 @@ python3 rop.py /lib/i386-linux-gnu/libc-2.23.so x86 32
 ## How to Create an ROP Chain
 - We create an ROP chain to launch a shell and insert that ROP chain into a buffer overflow in `examples/vuln.c`
 ```
-python3 gen_shellcode.py <ropgadgets_path> <libc_offset>
+python3 examples/gen_shellcode.py <rophunter_path> <libc_offset>
 ```
 For example:
 ```
-python3 gen_shellcode.py gadgets/x86_32/libc_ropgadget.txt 0xb7e09000
+python3 examples/gen_shellcode.py gadgets/x86_32/libc_rophunter.txt 0xb7e09000
 ```
 
 ## How to Run ROPgadget
