@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 import argparse
 import binascii
-import os, sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))    # For importing ROPChain
 from rop_chain import ROPChain
 
 class GenerateShellcode:
