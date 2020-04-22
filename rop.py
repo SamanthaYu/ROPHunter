@@ -13,6 +13,10 @@ def log(s):
     if DEBUG:
         print(s)
 
+def accResults(result):
+    log("exit worker")
+
+
 class ROPHunter:
     def __init__(self, arch, mode, parallelism):
         # TODO: Customize the max inst length for other achitectures besides x86_64
@@ -46,16 +50,21 @@ class ROPHunter:
 
     # print all gadgets in the trie
     def print_gadgets(self):
+        num_gadgets = 0
         for key in self.inst_trie.keys():
+            # for each leaf node
             if not self.inst_trie.has_subtrie(key):
                 prefixes = self.inst_trie.prefixes(key)
                 gadget_str = ""
-
+                # go back up the branch
                 for prefix in prefixes:
                     gadget_str = prefix.value.strip() + " ; " + gadget_str
 
                 gadget_str = self.inst_addr_dict[key] + " : " + key + " | " + gadget_str
+                num_gadgets+=1
                 print(gadget_str)
+
+        print("Total Gadgets found: " + str(num_gadgets) + "\n")
 
     def get_inst_str(self, disas_inst):
         return disas_inst[2] + " " + disas_inst[3]
@@ -83,15 +92,13 @@ class ROPHunter:
         return False
 
     def is_gadget_duplicate(self, trie_key, disas_inst):
-        orig_key = trie_key[:-2]
-        if self.inst_trie.has_key(orig_key):
-            if self.inst_trie[orig_key] == self.get_inst_str(disas_inst):
+        
+        if self.inst_trie.has_key(trie_key):
+            if self.inst_trie[trie_key] == self.get_inst_str(disas_inst):
                 return True
         return False
 
-    def build_from(self, code, pos, parent, ret_offset):
-        log("max inst len " + str(self.max_inst_len) + "\n")
-        log("pos " + str(pos) + "\n")
+    def build_branch_from(self, code, pos, parent, ret_offset):
         for step in range(1, self.max_inst_len):
             inst = code[pos - step : pos - 1]
             if pos - step >= pos - 1:
@@ -101,6 +108,45 @@ class ROPHunter:
                 continue
 
             num_inst = 0
+
+            trie_key = parent + "/" + inst.hex()
+
+            if self.is_gadget_duplicate(trie_key, disas_inst):
+                continue
+
+            for i in self.md.disasm_lite(inst, ret_offset - step + 1):
+                # disas_inst is a tuple of (address, size, mnemonic, op_str)
+                disas_inst = i
+                num_inst += 1
+                if num_inst > 1:
+                    break
+
+            # this part will only be entered if disasm finds valid instructions
+            # want only to extract single instructions
+            if num_inst == 1:
+
+                # If we don't restrict the number of instructions per gadget, the number of paths to explore explodes
+                if trie_key.count('/') > self.max_inst_per_gadget:
+                    break
+
+                if not self.is_inst_boring(disas_inst) and not self.is_gadget_duplicate(trie_key, disas_inst):
+                    self.inst_trie[trie_key] = self.get_inst_str(disas_inst)
+                    self.inst_addr_dict[trie_key] = hex(disas_inst[0])
+                    self.build_from(code, pos - step + 1, trie_key, disas_inst[0])
+        return 
+
+    def build_from(self, code, pos, parent, ret_offset):
+        for step in range(1, self.max_inst_len):
+            inst = code[pos - step : pos - 1]
+            if pos - step >= pos - 1:
+                continue
+
+            if pos - step < 0:
+                continue
+
+            num_inst = 0
+
+
             for i in self.md.disasm_lite(inst, ret_offset - step + 1):
                 # disas_inst is a tuple of (address, size, mnemonic, op_str)
                 disas_inst = i
@@ -121,7 +167,7 @@ class ROPHunter:
                     self.inst_trie[trie_key] = self.get_inst_str(disas_inst)
                     self.inst_addr_dict[trie_key] = hex(disas_inst[0])
                     self.build_from(code, pos - step + 1, trie_key, disas_inst[0])
-        return 
+        return
 
     def galileo(self, start_offset, code):
         if self.parallel == "0":
@@ -151,22 +197,22 @@ class ROPHunter:
         # place root c3 in the trie (key: c3, value: ret)
         self.inst_trie["c3"] = "ret"
 
-        with mp.Pool(processes = N) as p:
+        with mp.Pool(processes=4, maxtasksperchild=1) as p:
             for i in range(0, len(code)):
                 # print(binascii.hexlify(code[i:i+1]))
                 # print("byte is ", code[i:i+1].hex())
 
                 if code[i:i+1] == b"\xc3":
+                    log("worker " + str(i) + "\n")
                     self.prev_inst = "ret"
-                    result = p.apply_async(self.build_from, (code, i + 1, "c3", start_offset + i))
+                    result = p.apply_async(self.build_from, (code, i + 1, "c3", start_offset + i,), callback=accResults)
                     result.get(timeout = 30)
-
-            # Wait for all pool workers to finish
+                    log("finished function")
             p.close()
             p.join()
-
         return self.inst_trie
 
+   
 if __name__ == "__main__":
     # TODO: Add more architectures
     arch_dict = {
@@ -192,5 +238,5 @@ if __name__ == "__main__":
     # code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
     [start_offset, code] = rop_hunter.read_binary(args.binary)
 
-    rop_hunter.galileo(start_offset, code)
+    rop_hunter.galileo_serial(start_offset, code)
     rop_hunter.print_gadgets()
