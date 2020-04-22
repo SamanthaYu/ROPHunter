@@ -46,7 +46,7 @@ class ROPHunter:
                 print(gadget_str)
 
     def get_inst_str(self, disas_inst):
-        return disas_inst.mnemonic + " " + disas_inst.op_str
+        return disas_inst[2] + " " + disas_inst[3]
 
     def get_inst_trie(self):
         return self.inst_trie
@@ -55,19 +55,19 @@ class ROPHunter:
         return self.inst_addr_dict
 
     def is_inst_boring(self, disas_instr):
-        if disas_instr.mnemonic == "ret" or disas_instr.mnemonic == "jmp":
-            self.prev_inst = disas_instr.mnemonic
+        if disas_instr[2] == "ret" or disas_instr[2] == "jmp":
+            self.prev_inst = disas_instr[2]
             return True
 
-        if disas_instr.mnemonic == "leave" and self.prev_inst == "ret":
-            self.prev_inst = disas_instr.mnemonic
+        if disas_instr[2] == "leave" and self.prev_inst == "ret":
+            self.prev_inst = disas_instr[2]
             return True
 
         if self.get_inst_str(disas_instr) == "pop rbp" and self.prev_inst == "ret":
-            self.prev_inst = disas_instr.mnemonic
+            self.prev_inst = disas_instr[2]
             return True
 
-        self.prev_inst = disas_instr.mnemonic
+        self.prev_inst = disas_instr[2]
         return False
 
     def is_gadget_duplicate(self, trie_key, disas_inst):
@@ -87,8 +87,8 @@ class ROPHunter:
                 continue
 
             num_inst = 0
-            for i in self.md.disasm(inst, ret_offset - step + 1):
-                # print("0x%x:\t%s\t%s\t%s" %(i.address, inst, i.mnemonic, i.op_str))
+            for i in self.md.disasm_lite(inst, ret_offset - step + 1):
+                # disas_inst is a tuple of (address, size, mnemonic, op_str)
                 disas_inst = i
                 num_inst += 1
                 if num_inst > 1:
@@ -105,8 +105,8 @@ class ROPHunter:
 
                 if not self.is_inst_boring(disas_inst) and not self.is_gadget_duplicate(trie_key, disas_inst):
                     self.inst_trie[trie_key] = self.get_inst_str(disas_inst)
-                    self.inst_addr_dict[trie_key] = hex(disas_inst.address)
-                    self.build_from(code, pos - step + 1, trie_key, disas_inst.address)
+                    self.inst_addr_dict[trie_key] = hex(disas_inst[0])
+                    self.build_from(code, pos - step + 1, trie_key, disas_inst[0])
 
     def galileo(self, start_offset, code):
         # place root c3 in the trie (key: c3, value: ret)

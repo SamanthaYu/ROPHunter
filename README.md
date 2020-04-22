@@ -1,6 +1,8 @@
 # CMPT 479 Project - ROPHunter
 
 ## Setup
+- We'll be using the virtual machine from assignment 1: https://vault.sfu.ca/index.php/s/pq2sVjmUlmfBWwl
+
 - We'll disable ASLR:
 ```
 sudo sysctl -w kernel.randomize_va_space=0
@@ -19,6 +21,12 @@ pip install -r requirements.txt
 
 ## Find Base Address of libc
 - In this attack, we'll assume that libc is not statically linked to the executable
+- We use `vuln.c` from assignment 1 as our example vulnerable program:
+```
+gcc -o vuln -z execstack -fno-stack-protector vuln.c
+sudo chown root vuln
+sudo chmod 4755 vuln
+```
 - We can run `ldd examples/vuln` to find this base address:
 ```
 	linux-gate.so.1 =>  (0xb7fd9000)
@@ -35,16 +43,28 @@ For example:
 ```
 python3 rop.py /lib/i386-linux-gnu/libc-2.23.so x86 32
 ```
+*Warning, this step may take a few minutes* 
 
 ## How to Create an ROP Chain
 - We create an ROP chain to launch a shell and insert that ROP chain into a buffer overflow in `examples/vuln.c`
 ```
-python3 examples/gen_shellcode.py <rophunter_path> <libc_offset>
+python3 gen_shellcode.py <rophunter_path> <libc_offset>
 ```
 For example:
 ```
-python3 examples/gen_shellcode.py gadgets/x86_32/libc_rophunter.txt 0xb7e09000
+python3 gen_shellcode.py gadgets/x86_32/libc_rophunter.txt 0xb7e09000
 ```
+
+### How to Debug this ROP Chain
+- We will be using GDB to verify whether the shellcode works: `gdb examples/vuln`
+```
+b main	# libc only gets loaded after main(), so we have to stop at main() before setting the other breakpoints
+run
+b *<Gadget address>
+continue
+```
+- If GDB stops at the expected instruction, then we have found the correct gadget.
+- Unfortunately, finding the right gadgets for an ROP shell is still trial-and-error. Some gadgets may be invalid, because GDB does not interpret the gadgets in the same way as the Capstone disassembler.
 
 ## How to Run ROPgadget
 ```
