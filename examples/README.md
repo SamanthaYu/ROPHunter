@@ -1,19 +1,19 @@
 # How to Launch a Shell in a Vulnerable Program
 ## Setup
-- In this attack, we'll assume that libc is not statically linked to the executable
-- We'll link zsh to sh:
-```
-sudo ln -sf /bin/zsh /bin/sh
-```
-- We'll use `vuln.c` from assignment 1 as our example vulnerable program:
+- For our example vulnerable program, we'll use `vuln.c` from assignment 1:
 ```
 gcc -o vuln -z execstack -fno-stack-protector vuln.c
 sudo chown root vuln
 sudo chmod 4755 vuln
 ```
+- In this attack, we'll assume that libc is not statically linked to the executable
+- Link zsh to sh:
+```
+sudo ln -sf /bin/zsh /bin/sh
+```
 
 ## Find Base Address of libc
-- We can run `ldd examples/vuln` to find this base address:
+- Run `ldd examples/vuln` to find this base address:
 ```
 	linux-gate.so.1 =>  (0xb7fd9000)
 	libc.so.6 => /lib/i386-linux-gnu/libc.so.6 (0xb7e09000)
@@ -21,8 +21,9 @@ sudo chmod 4755 vuln
 ```
 - In this example, libc's base address is `0xb7e09000`
 
-## How to Create an ROP Chain
-- We'll create an ROP chain to launch a shell and insert that ROP chain into a buffer overflow in `examples/vuln.c`
+## How to Create an ROP Shellcode
+- We'll create an ROP chain to launch a shell
+	- `vuln` will execute the generated `shellcode` during a buffer overflow
 ```
 python3 gen_shellcode.py --libc_offset <libc_offset>
 ```
@@ -64,4 +65,4 @@ continue
 
 #### Invalid Gadgets
 - If GDB stops at the expected instruction, then we have found the correct gadget
-- Unfortunately, finding the right gadgets for an ROP shell is still trial-and-error. Some gadgets may be invalid, because GDB may not interpret the gadgets in the same way as the Capstone disassembler
+- Unfortunately, finding the right gadgets for an ROP shell is still trial-and-error. Some gadgets may be invalid, because GDB may not interpret the gadgets in the same way as the Capstone disassembler.
