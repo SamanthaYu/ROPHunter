@@ -24,7 +24,7 @@ class ROPHunter:
         self.prev_inst = "0"
 
         # Whether to run serial or parallel version
-        self.parallel = parallelism
+        self.parallel = int(parallelism)
 
     def read_binary(self, file_path):
         with open(file_path, "rb") as f:
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("arch", help="Hardware architecture", choices=arch_dict.keys())
     arg_parser.add_argument("mode", help="Hardware mode", choices=mode_dict.keys())
     # 0 for serial, 1 for parallelism
-    arg_parser.add_argument("parallel", help="Parallelism", choices=range(0, 2))
+    arg_parser.add_argument("parallel", help="Parallelism")
     args = arg_parser.parse_args()
 
     rop_hunter = ROPHunter(arch_dict[args.arch], mode_dict[args.mode], parallelism)
