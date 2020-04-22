@@ -3,9 +3,12 @@ from capstone import *
 from elftools.elf.elffile import ELFFile
 import pygtrie
 
+import multiprocessing as mp
+import os
+
 
 class ROPHunter:
-    def __init__(self, arch, mode):
+    def __init__(self, arch, mode, parallelism):
         # TODO: Customize the max inst length for other achitectures besides x86_64
         self.max_inst_len = 15
         self.max_inst_per_gadget = 3
@@ -19,6 +22,9 @@ class ROPHunter:
 
         # Initialize prev_inst to null; used to find boring instructions
         self.prev_inst = "0"
+
+        # Whether to run serial or parallel version
+        self.parallel = parallelism
 
     def read_binary(self, file_path):
         with open(file_path, "rb") as f:
@@ -109,6 +115,12 @@ class ROPHunter:
                     self.build_from(code, pos - step + 1, trie_key, disas_inst[0])
 
     def galileo(self, start_offset, code):
+        if self.parallel == 0:
+            return galileo_serial
+        else:
+            return galileo_parallel
+
+    def galileo_serial(self, start_offset, code):
         # place root c3 in the trie (key: c3, value: ret)
         self.inst_trie["c3"] = "ret"
 
@@ -122,6 +134,24 @@ class ROPHunter:
 
         return self.inst_trie
 
+    def galileo_parallel(self, start_offset, code):
+        # determine num of cpus on machine for optimal parallelism
+        N = mp.cpu_count()
+        print("running on galileo in parallel on " + N + " cpus:\n")
+        
+        # place root c3 in the trie (key: c3, value: ret)
+        self.inst_trie["c3"] = "ret"
+
+        with mp.Pool(processes = N) as p:
+            for i in range(0, len(code)):
+                # print(binascii.hexlify(code[i:i+1]))
+                # print("byte is ", code[i:i+1].hex())
+
+                if code[i:i+1] == b"\xc3":
+                    self.prev_inst = "ret"
+                    p.apply_async(self.build_from_parallel, (code, i + 1, "c3", start_offset + i))
+
+        return self.inst_trie
 
 if __name__ == "__main__":
     # TODO: Add more architectures
@@ -135,13 +165,17 @@ if __name__ == "__main__":
         "64": CS_MODE_64
     }
 
+    para
+
     arg_parser = argparse.ArgumentParser(description="Find ROP gadgets within a binary file")
     arg_parser.add_argument("binary", help="File path of the binary executable")
     arg_parser.add_argument("arch", help="Hardware architecture", choices=arch_dict.keys())
     arg_parser.add_argument("mode", help="Hardware mode", choices=mode_dict.keys())
+    # 0 for serial, 1 for parallelism
+    arg_parser.add_argument("parallel", help="Parallelism", choices=range(0, 2))
     args = arg_parser.parse_args()
 
-    rop_hunter = ROPHunter(arch_dict[args.arch], mode_dict[args.mode])
+    rop_hunter = ROPHunter(arch_dict[args.arch], mode_dict[args.mode], parallelism)
 
     # code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
     [start_offset, code] = rop_hunter.read_binary(args.binary)
