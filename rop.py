@@ -6,6 +6,12 @@ import pygtrie
 import multiprocessing as mp
 import os
 
+DEBUG = True
+
+# Debugging
+def log(s):
+    if DEBUG:
+        print s
 
 class ROPHunter:
     def __init__(self, arch, mode, parallelism):
@@ -84,6 +90,8 @@ class ROPHunter:
         return False
 
     def build_from(self, code, pos, parent, ret_offset):
+        log("max inst len " + str(self.max_inst_len) + "\n")
+        log("pos " + str(pos) + "\n")
         for step in range(1, self.max_inst_len):
             inst = code[pos - step : pos - 1]
             if pos - step >= pos - 1:
