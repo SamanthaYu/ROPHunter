@@ -23,7 +23,7 @@ python3 rop.py /lib/i386-linux-gnu/libc-2.23.so x86 32
 *Warning, this step may take a few minutes* 
 
 ## How to Launch a Shell in a Vulnerable Program
-- Please see <https://github.com/SamanthaYu/cmpt479-project/blob/master/shellcode/README.md>
+- Please see [shellcode/README.md](shellcode/README.md)
 
 ## How to Run ROPgadget
 ```
