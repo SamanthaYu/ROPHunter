@@ -17,7 +17,7 @@ sudo ln -sf /bin/zsh /bin/sh
 ```
 
 ## Find Base Address of libc
-- Run `ldd examples/vuln` to find this base address:
+- Run `ldd vuln` to find this base address:
 ```
 	linux-gate.so.1 =>  (0xb7fd9000)
 	libc.so.6 => /lib/i386-linux-gnu/libc.so.6 (0xb7e09000)
