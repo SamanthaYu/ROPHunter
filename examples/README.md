@@ -47,8 +47,8 @@ python3 gen_shellcode.py --libc_offset 0xb7e09000
 ./invoke.sh -d vuln
 ```
 
-### How to Debug this ROP Chain
-#### Using GDB
+## How to Debug this ROP Chain
+### Using GDB
 - Using GDB, we run `./invoke.sh -d vuln`:
 ```
 b main	# libc only gets loaded after main(), so we have to stop at main() before setting the other breakpoints
@@ -57,12 +57,12 @@ b *<Gadget address>	# e.g. First gadget's address is 0x2c79c
 continue
 ```
 
-#### Wrong %esp
+### Wrong %esp
 - For some parts of the shellcode, we need to store addresses to other places on the stack
 - We calculate these addresses by using the address stored in `%esp` at the first gadget
 	- With return-oriented programming, `%esp` acts as the instruction pointer
 - We can find this address by using GDB and can pass this address to `gen_shellcode.py` with the argument `init_esp_addr`
 
-#### Invalid Gadgets
+### Invalid Gadgets
 - If GDB stops at the expected instruction, then we have found the correct gadget
 - Unfortunately, finding the right gadgets for an ROP shell is still trial-and-error. Some gadgets may be invalid, because GDB may not interpret the gadgets in the same way as the Capstone disassembler.
