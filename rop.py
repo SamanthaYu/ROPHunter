@@ -149,7 +149,7 @@ class ROPHunter:
 
                 if code[i:i+1] == b"\xc3":
                     self.prev_inst = "ret"
-                    p.apply_async(self.build_from_parallel, (code, i + 1, "c3", start_offset + i))
+                    p.apply_async(self.build_from, (code, i + 1, "c3", start_offset + i))
 
         return self.inst_trie
 
