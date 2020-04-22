@@ -53,7 +53,7 @@ python3 gen_shellcode.py --libc_offset 0xb7e09000
 ```
 ./invoke.sh -d vuln
 ```
-- We mst clear the two environment variables created by GDB:
+- Clear the two environment variables created by GDB:
 ```
 unset env LINES
 unset env COLUMNS
