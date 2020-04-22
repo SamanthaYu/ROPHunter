@@ -1,5 +1,4 @@
 import argparse
-# from collections import OrderedDict 
 
 class ROPChain:
     def __init__(self, rop_hunter_file):
@@ -36,14 +35,6 @@ class ROPChain:
         if len(possible_gadgets) < 1:
             print("Could not find the gadget: " + gadget_suffix)
             return None
-
-        offsets = set()
-        for gadget in possible_gadgets:
-            gadget_offset = 0xb7e09000 + self.get_gadget_addr(gadget[0], gadget[1], gadget_suffix)
-            offsets.add(gadget_offset)
-
-        for offset in offsets:
-            print(gadget_suffix + " => " + hex(offset))
 
         possible_gadget = possible_gadgets[0]
         return self.get_gadget_addr(possible_gadget[0], possible_gadget[1], gadget_suffix)
