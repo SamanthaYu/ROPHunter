@@ -137,7 +137,7 @@ class ROPHunter:
     def galileo_parallel(self, start_offset, code):
         # determine num of cpus on machine for optimal parallelism
         N = mp.cpu_count()
-        print("running on galileo in parallel on " + N + " cpus:\n")
+        print("running on galileo in parallel on " + str(N) + " cpus:\n")
         
         # place root c3 in the trie (key: c3, value: ret)
         self.inst_trie["c3"] = "ret"
