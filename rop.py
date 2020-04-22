@@ -24,7 +24,7 @@ class ROPHunter:
         self.prev_inst = "0"
 
         # Whether to run serial or parallel version
-        self.parallel = int(parallelism)
+        self.parallel = parallelism
 
     def read_binary(self, file_path):
         with open(file_path, "rb") as f:
@@ -115,7 +115,7 @@ class ROPHunter:
                     self.build_from(code, pos - step + 1, trie_key, disas_inst[0])
 
     def galileo(self, start_offset, code):
-        if self.parallel == 0:
+        if self.parallel == "0":
             return self.galileo_serial(start_offset, code)
         else:
             return self.galileo_parallel(start_offset, code)
