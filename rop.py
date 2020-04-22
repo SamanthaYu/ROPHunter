@@ -11,7 +11,7 @@ DEBUG = True
 # Debugging
 def log(s):
     if DEBUG:
-        print s
+        print(s)
 
 class ROPHunter:
     def __init__(self, arch, mode, parallelism):
