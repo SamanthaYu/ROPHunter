@@ -165,8 +165,6 @@ if __name__ == "__main__":
         "64": CS_MODE_64
     }
 
-    para
-
     arg_parser = argparse.ArgumentParser(description="Find ROP gadgets within a binary file")
     arg_parser.add_argument("binary", help="File path of the binary executable")
     arg_parser.add_argument("arch", help="Hardware architecture", choices=arch_dict.keys())
