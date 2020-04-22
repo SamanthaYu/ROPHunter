@@ -173,7 +173,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("parallel", help="Parallelism")
     args = arg_parser.parse_args()
 
-    rop_hunter = ROPHunter(arch_dict[args.arch], mode_dict[args.mode], parallelism)
+    rop_hunter = ROPHunter(arch_dict[args.arch], mode_dict[args.mode], args.parallel)
 
     # code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
     [start_offset, code] = rop_hunter.read_binary(args.binary)
