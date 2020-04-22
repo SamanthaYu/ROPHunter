@@ -151,6 +151,10 @@ class ROPHunter:
                     self.prev_inst = "ret"
                     p.apply_async(self.build_from, (code, i + 1, "c3", start_offset + i))
 
+            # Wait for all pool workers to finish
+            p.close()
+            p.join()
+
         return self.inst_trie
 
 if __name__ == "__main__":
