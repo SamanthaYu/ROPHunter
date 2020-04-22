@@ -116,9 +116,9 @@ class ROPHunter:
 
     def galileo(self, start_offset, code):
         if self.parallel == 0:
-            return galileo_serial
+            return galileo_serial(start_offset, code)
         else:
-            return galileo_parallel
+            return galileo_parallel(start_offset, code)
 
     def galileo_serial(self, start_offset, code):
         # place root c3 in the trie (key: c3, value: ret)
