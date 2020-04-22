@@ -113,6 +113,7 @@ class ROPHunter:
                     self.inst_trie[trie_key] = self.get_inst_str(disas_inst)
                     self.inst_addr_dict[trie_key] = hex(disas_inst[0])
                     self.build_from(code, pos - step + 1, trie_key, disas_inst[0])
+        return 
 
     def galileo(self, start_offset, code):
         if self.parallel == "0":
@@ -149,7 +150,8 @@ class ROPHunter:
 
                 if code[i:i+1] == b"\xc3":
                     self.prev_inst = "ret"
-                    p.apply_async(self.build_from, (code, i + 1, "c3", start_offset + i))
+                    result = p.apply_async(self.build_from, (code, i + 1, "c3", start_offset + i))
+                    result.get(timeout = 30)
 
             # Wait for all pool workers to finish
             p.close()
