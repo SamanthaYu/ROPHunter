@@ -35,7 +35,7 @@ python3 gen_shellcode.py --libc_offset 0xb7e09000
 - **Note**: We don't recommend using `--gadgets`, because the generated shellcode won't work 100% of the time. Some gadgets found by ROPHunter may be invalid, because the actual execution could interpret the bytes differently than the Capstone disassembler.
 
 ## How to Launch a Shell
-- We used GDB to determine where in the stack to store parts of the shellcode; e.g. `/bin/sh`
+- We use GDB to determine where in the stack to store parts of the shellcode; e.g. `"/bin/sh\0"`
 - However, GDB's stack frame may not match normal execution
 - We use `invoke.sh` to run `vuln` within the same environment (courtesy of https://stackoverflow.com/questions/17775186/buffer-overflow-works-in-gdb-but-not-without-it):
 	- Run `vuln` in normal execution:
