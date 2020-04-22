@@ -170,7 +170,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("arch", help="Hardware architecture", choices=arch_dict.keys())
     arg_parser.add_argument("mode", help="Hardware mode", choices=mode_dict.keys())
     # 0 for serial, 1 for parallelism
-    arg_parser.add_argument("parallel", help="Parallelism")
+    arg_parser.add_argument("parallel", help="Parallelism", choices=['0', '1'])
     args = arg_parser.parse_args()
 
     rop_hunter = ROPHunter(arch_dict[args.arch], mode_dict[args.mode], args.parallel)
