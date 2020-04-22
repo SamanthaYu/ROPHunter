@@ -24,7 +24,6 @@ class ROPChain:
         gadget_offset = 0
 
         for i in range(suffix_num_inst, total_num_inst):
-            print(bytes_list[i] + " => " + str(len(bytes_list[i])))
             gadget_offset += round(len(bytes_list[i]) / 2)
 
         return start_addr + gadget_offset
