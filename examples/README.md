@@ -1,5 +1,9 @@
 # How to Launch a Shell in a Vulnerable Program
 ## Setup
+- Disable ASLR:
+```
+sudo sysctl -w kernel.randomize_va_space=0
+```
 - For our example vulnerable program, we'll use `vuln.c` from assignment 1:
 ```
 gcc -o vuln -z execstack -fno-stack-protector vuln.c
@@ -38,18 +42,24 @@ python3 gen_shellcode.py --libc_offset 0xb7e09000
 - We use GDB to determine where in the stack to store parts of the shellcode; e.g. `"/bin/sh\0"`
 - However, GDB's stack frame may not match normal execution
 - We use `invoke.sh` to run `vuln` within the same environment (courtesy of https://stackoverflow.com/questions/17775186/buffer-overflow-works-in-gdb-but-not-without-it):
-	- Run `vuln` in normal execution:
+- Run `vuln` in normal execution:
 ```
 ./invoke.sh vuln
-```
-	- Run `vuln` with GDB:
-```
-./invoke.sh -d vuln
 ```
 
 ### How to Debug this ROP Chain
 #### Using GDB
-- Using GDB, we run `./invoke.sh -d vuln`:
+- Run `vuln` with GDB:
+```
+./invoke.sh -d vuln
+```
+- GDB creates two additional variables that we mst clear:
+```
+unset env LINES
+unset env COLUMNS
+```
+
+- We can then debug this ROP chain by setting breakpoints:
 ```
 b main	# libc only gets loaded after main(), so we have to stop at main() before setting the other breakpoints
 run
@@ -57,12 +67,12 @@ b *<Gadget address>	# e.g. First gadget's address is 0x2c79c
 continue
 ```
 
-#### Wrong %esp
+#### Finding Correct %esp
 - For some parts of the shellcode, we need to store addresses to other places on the stack
 - We calculate these addresses by using the address stored in `%esp` at the first gadget
 	- With return-oriented programming, `%esp` acts as the instruction pointer
 - We can find this address by using GDB and can pass this address to `gen_shellcode.py` with the argument `init_esp_addr`
 
-#### Invalid Gadgets
+#### Determining Valid Gadgets
 - If GDB stops at the expected instruction, then we have found the correct gadget
 - Unfortunately, finding the right gadgets for an ROP shell is still trial-and-error. Some gadgets may be invalid, because GDB may not interpret the gadgets in the same way as the Capstone disassembler.

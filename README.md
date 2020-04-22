@@ -2,10 +2,6 @@
 
 ## Setup
 - We'll be using the virtual machine from assignment 1: https://vault.sfu.ca/index.php/s/pq2sVjmUlmfBWwl
-- Disable ASLR:
-```
-sudo sysctl -w kernel.randomize_va_space=0
-```
 - We'll be running the following instructions within a Python virtualenv:
 ```
 python3 -m venv venv
