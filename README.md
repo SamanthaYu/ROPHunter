@@ -37,7 +37,7 @@ python3 evaluate_rop.py --rop_gadget_path <ropgadget_path> --rop_hunter_path <ro
 ```
 - For example:
 ```
-python3 evaluate_rop.py --rop_gadget_path gadgets/libc_ropgadget.txt --rop_hunter_path gadgets/libc_rophunter.txt
+python3 evaluate_rop.py --rop_gadget_path gadgets/x86_32/libc_ropgadget.txt --rop_hunter_path gadgets/x86_32/libc_rophunter.txt
 ```
 - `evaluation/matches.txt` and `evaluation/mismatches.txt` correspond to gadgets that both ROPgadget and ROPHunter found at the same address.
 - `evaluation/false_positives.txt` refers to gadgets that only ROPHunter found
