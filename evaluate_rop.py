@@ -23,6 +23,10 @@ class EvaluateROP:
     def parse_rop_hunter_file(self):
         with open(self.rop_hunter_path, "r") as f:
             for line in f:
+                # We skip parsing any lines that don't contain " : "; e.g. Header lines
+                if " : " not in line:
+                    continue
+                    
                 addr = line.split(" : ")[0]
                 addr_hex = int(addr, 16)
                 gadget = line.split(" | ")[1]
