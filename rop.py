@@ -3,9 +3,22 @@ from capstone import *
 from elftools.elf.elffile import ELFFile
 import pygtrie
 
+import multiprocessing as mp
+import os
+
+DEBUG = True
+
+# Debugging
+def log(s):
+    if DEBUG:
+        print(s)
+
+def accResults(result):
+    log("exit worker")
+
 
 class ROPHunter:
-    def __init__(self, arch, mode):
+    def __init__(self, arch, mode, parallelism):
         # TODO: Customize the max inst length for other achitectures besides x86_64
         self.max_inst_len = 15
         self.max_inst_per_gadget = 3
@@ -20,6 +33,11 @@ class ROPHunter:
         # Initialize prev_inst to null; used to find boring instructions
         self.prev_inst = "0"
 
+        # Whether to run serial or parallel version
+        self.parallel = parallelism
+
+        self.num_gadgets = 0
+
     def read_binary(self, file_path):
         with open(file_path, "rb") as f:
             bin_file = ELFFile(f)
@@ -32,18 +50,40 @@ class ROPHunter:
         # print(binascii.hexlify(binary_file))
         return [bin_addr, bin_data]
 
-    # print all gadgets in the trie
+    # print entire gadget starting at instr_key
+    def print_gadget(self, instr_key):
+
+        self.num_gadgets+=1
+
+        gadget_str = ""
+
+        prefixes = self.inst_trie.prefixes(instr_key) 
+
+        # go back up the branch
+        for prefix in prefixes:
+            gadget_str = prefix.value.strip() + " ; " + gadget_str
+
+        gadget_str = self.inst_addr_dict[instr_key] + " : " + instr_key + " | " + gadget_str
+
+        print(gadget_str)
+
+    # print all gadgets in the trie (INCORRECT)
     def print_gadgets(self):
+        num_gadgets = 0
         for key in self.inst_trie.keys():
+            # for each leaf node
             if not self.inst_trie.has_subtrie(key):
                 prefixes = self.inst_trie.prefixes(key)
                 gadget_str = ""
-
+                # go back up the branch
                 for prefix in prefixes:
                     gadget_str = prefix.value.strip() + " ; " + gadget_str
 
                 gadget_str = self.inst_addr_dict[key] + " : " + key + " | " + gadget_str
+                num_gadgets+=1
                 print(gadget_str)
+
+        print("Total Gadgets found: " + str(num_gadgets) + "\n")
 
     def get_inst_str(self, disas_inst):
         return disas_inst[2] + " " + disas_inst[3]
@@ -71,13 +111,13 @@ class ROPHunter:
         return False
 
     def is_gadget_duplicate(self, trie_key, disas_inst):
-        orig_key = trie_key[:-2]
-        if self.inst_trie.has_key(orig_key):
-            if self.inst_trie[orig_key] == self.get_inst_str(disas_inst):
+        
+        if self.inst_trie.has_key(trie_key):
+            if self.inst_trie[trie_key] == self.get_inst_str(disas_inst):
                 return True
         return False
 
-    def build_from(self, code, pos, parent, ret_offset):
+    def build_from(self, output, code, pos, parent, ret_offset):
         for step in range(1, self.max_inst_len):
             inst = code[pos - step : pos - 1]
             if pos - step >= pos - 1:
@@ -87,6 +127,8 @@ class ROPHunter:
                 continue
 
             num_inst = 0
+
+
             for i in self.md.disasm_lite(inst, ret_offset - step + 1):
                 # disas_inst is a tuple of (address, size, mnemonic, op_str)
                 disas_inst = i
@@ -97,18 +139,31 @@ class ROPHunter:
             # this part will only be entered if disasm finds valid instructions
             # want only to extract single instructions
             if num_inst == 1:
-                trie_key = parent + "/" + inst.hex()
 
+                trie_key = parent + "/" + inst.hex()
                 # If we don't restrict the number of instructions per gadget, the number of paths to explore explodes
                 if trie_key.count('/') > self.max_inst_per_gadget:
                     break
 
                 if not self.is_inst_boring(disas_inst) and not self.is_gadget_duplicate(trie_key, disas_inst):
+
                     self.inst_trie[trie_key] = self.get_inst_str(disas_inst)
                     self.inst_addr_dict[trie_key] = hex(disas_inst[0])
-                    self.build_from(code, pos - step + 1, trie_key, disas_inst[0])
 
-    def galileo(self, start_offset, code):
+                    if(output):
+                        self.print_gadget(trie_key)
+                    
+                    self.build_from(output, code, pos - step + 1, trie_key, disas_inst[0])
+
+        return
+
+    def galileo(self, output, start_offset, code):
+        if self.parallel == "0":
+            return self.galileo_serial(output, start_offset, code)
+        else:
+            return self.galileo_parallel(output, start_offset, code)
+
+    def galileo_serial(self, output, start_offset, code):
         # place root c3 in the trie (key: c3, value: ret)
         self.inst_trie["c3"] = "ret"
 
@@ -118,11 +173,37 @@ class ROPHunter:
 
             if code[i:i+1] == b"\xc3":
                 self.prev_inst = "ret"
-                self.build_from(code, i + 1, "c3", start_offset + i)
+                self.build_from(output, code, i + 1, "c3", start_offset + i)
 
-        return self.inst_trie
+        if(output):
+            print("Total Gadgets found: " + str(self.num_gadgets) + "\n")
 
+        return 
 
+    def galileo_parallel(self, output, start_offset, code):
+        # determine num of cpus on machine for optimal parallelism
+        N = mp.cpu_count()
+        print("running on galileo in parallel on " + str(N) + " cpus:\n")
+        
+        # place root c3 in the trie (key: c3, value: ret)
+        self.inst_trie["c3"] = "ret"
+
+        with mp.Pool(processes=4, maxtasksperchild=1) as p:
+            for i in range(0, len(code)):
+                # print(binascii.hexlify(code[i:i+1]))
+                # print("byte is ", code[i:i+1].hex())
+
+                if code[i:i+1] == b"\xc3":
+                    log("worker " + str(i) + "\n")
+                    self.prev_inst = "ret"
+                    result = p.apply_async(self.build_from, (code, i + 1, "c3", start_offset + i,), callback=accResults)
+                    result.get(timeout = 30)
+                    log("finished function")
+            p.close()
+            p.join()
+        return 
+
+   
 if __name__ == "__main__":
     # TODO: Add more architectures
     arch_dict = {
@@ -136,15 +217,20 @@ if __name__ == "__main__":
     }
 
     arg_parser = argparse.ArgumentParser(description="Find ROP gadgets within a binary file")
-    arg_parser.add_argument("binary", help="File path of the binary executable")
-    arg_parser.add_argument("arch", help="Hardware architecture", choices=arch_dict.keys())
-    arg_parser.add_argument("mode", help="Hardware mode", choices=mode_dict.keys())
+    arg_parser.add_argument("--binary", help="File path of the binary executable")
+    arg_parser.add_argument("--arch", help="Hardware architecture", choices=arch_dict.keys())
+    arg_parser.add_argument("--mode", help="Hardware mode", choices=mode_dict.keys())
+    # 0 for serial, 1 for parallelism
+    arg_parser.add_argument("--parallel", help="Enable parallelism", choices=['0', '1'], default = '0')
+    arg_parser.add_argument("--output", help="Whether to ouptut gadgets or not", choices=['0', '1'], default = '1')
     args = arg_parser.parse_args()
 
-    rop_hunter = ROPHunter(arch_dict[args.arch], mode_dict[args.mode])
+    output = True
+    if args.output == '0':
+        output = False
+    rop_hunter = ROPHunter(arch_dict[args.arch], mode_dict[args.mode], args.parallel)
 
-    # code = b"\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3\xf7\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
     [start_offset, code] = rop_hunter.read_binary(args.binary)
 
-    rop_hunter.galileo(start_offset, code)
-    rop_hunter.print_gadgets()
+    rop_hunter.galileo(output, start_offset, code)
+   
