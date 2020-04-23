@@ -62,7 +62,7 @@ unset env COLUMNS
 ```
 b main	# libc only gets loaded after main(), so we have to stop at main() before setting the other breakpoints
 run
-b *<Gadget address>	# e.g. First gadget's address is 0x2c79c
+b *<Gadget address>	# e.g. First gadget's is 0x2c79c in libc, so we use 0xb7e3579c as the address
 continue
 ```
 

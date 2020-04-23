@@ -9,6 +9,7 @@ source venv/bin/activate
 ```
 - Install all necessary requirements:
 ```
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
