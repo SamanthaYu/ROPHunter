@@ -15,11 +15,11 @@ pip install -r requirements.txt
 
 ## How to Find Gadgets
 ```
-python3 rop.py <binary> <architecture> <mode>
+python3 rop.py --binary <binary> --arch <architecture> --mode <mode>
 ```
 - For example:
 ```
-python3 rop.py /lib/i386-linux-gnu/libc-2.23.so x86 32
+python3 rop.py --binary /lib/i386-linux-gnu/libc-2.23.so --arch x86 --mode 32
 ```
 *Warning, this step may take a few minutes* 
 
@@ -33,11 +33,11 @@ ROPgadget --binary <libc_path> --rawArch x86 --rawMode 32
 
 ## How to Evaluate Gadgets Found by ROPgadget vs. ROPHunter
 ```
-python3 evaluate_rop.py <ropgadget_path> <rophunter_path>
+python3 evaluate_rop.py --rop_gadget_path <ropgadget_path> --rop_hunter_path <rophunter_path>
 ```
 - For example:
 ```
-python3 evaluate_rop.py gadgets/x86_32/libc_ropgadget.txt gadgets/x86_32/libc_rophunter.txt
+python3 evaluate_rop.py --rop_gadget_path gadgets/x86_32/libc_ropgadget.txt --rop_hunter_path gadgets/x86_32/libc_rophunter.txt
 ```
 - `evaluation/matches.txt` and `evaluation/mismatches.txt` correspond to gadgets that both ROPgadget and ROPHunter found at the same address.
 - `evaluation/false_positives.txt` refers to gadgets that only ROPHunter found

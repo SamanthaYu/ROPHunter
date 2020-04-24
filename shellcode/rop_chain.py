@@ -8,6 +8,9 @@ class ROPChain:
     def parse_gadgets_file(self):
         with open(self.rop_hunter_file, "r") as f:
             for line in f:
+                if " : " not in line:
+                    continue
+
                 addr, line_no_addr = line.split(" : ", 1)
                 addr_hex = int(addr, 16)
 

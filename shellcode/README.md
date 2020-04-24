@@ -58,7 +58,6 @@ python3 gen_shellcode.py --libc_offset 0xb7e09000
 unset env LINES
 unset env COLUMNS
 ```
-
 - We can then debug this ROP chain by setting breakpoints:
 ```
 b main	# libc only gets loaded after main(), so we have to stop at main() before setting the other breakpoints

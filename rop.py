@@ -19,7 +19,7 @@ def accResults(result):
 
 class ROPHunter:
     def __init__(self, arch, mode, parallelism):
-        # TODO: Customize the max inst length for other achitectures besides x86_64
+        # TODO: Customize the max inst length for other architectures besides x86_64
         self.max_inst_len = 15
         self.max_inst_per_gadget = 3
         self.inst_trie = pygtrie.StringTrie()
@@ -217,9 +217,9 @@ if __name__ == "__main__":
     }
 
     arg_parser = argparse.ArgumentParser(description="Find ROP gadgets within a binary file")
-    arg_parser.add_argument("--binary", help="File path of the binary executable")
-    arg_parser.add_argument("--arch", help="Hardware architecture", choices=arch_dict.keys())
-    arg_parser.add_argument("--mode", help="Hardware mode", choices=mode_dict.keys())
+    arg_parser.add_argument("--binary", help="File path of the binary executable", required=True)
+    arg_parser.add_argument("--arch", help="Hardware architecture", choices=arch_dict.keys(), required=True)
+    arg_parser.add_argument("--mode", help="Hardware mode", choices=mode_dict.keys(), required=True)
     # 0 for serial, 1 for parallelism
     arg_parser.add_argument("--parallel", help="Enable parallelism", choices=['0', '1'], default = '0')
     arg_parser.add_argument("--output", help="Whether to ouptut gadgets or not", choices=['0', '1'], default = '1')
