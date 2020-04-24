@@ -232,7 +232,7 @@ if __name__ == "__main__":
 
     duplicates = True
     if args.duplicates == '0':
-        output = False
+        duplicates = False
 
     rop_hunter = ROPHunter(arch_dict[args.arch], mode_dict[args.mode], args.parallel)
 
