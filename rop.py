@@ -117,7 +117,7 @@ class ROPHunter:
                 return True
         return False
 
-    def build_from(self, output, code, pos, parent, ret_offset):
+    def build_from(self, duplicates, output, code, pos, parent, ret_offset):
         for step in range(1, self.max_inst_len):
             inst = code[pos - step : pos - 1]
             if pos - step >= pos - 1:
@@ -145,7 +145,7 @@ class ROPHunter:
                 if trie_key.count('/') > self.max_inst_per_gadget:
                     break
 
-                if not self.is_inst_boring(disas_inst) and not self.is_gadget_duplicate(trie_key, disas_inst):
+                if not self.is_inst_boring(disas_inst) and (duplicates or not self.is_gadget_duplicate(trie_key, disas_inst)):
 
                     self.inst_trie[trie_key] = self.get_inst_str(disas_inst)
                     self.inst_addr_dict[trie_key] = hex(disas_inst[0])
@@ -153,17 +153,17 @@ class ROPHunter:
                     if(output):
                         self.print_gadget(trie_key)
                     
-                    self.build_from(output, code, pos - step + 1, trie_key, disas_inst[0])
+                    self.build_from(duplicates, output, code, pos - step + 1, trie_key, disas_inst[0])
 
         return
 
-    def galileo(self, output, start_offset, code):
+    def galileo(self, duplicates, output, start_offset, code):
         if self.parallel == "0":
-            return self.galileo_serial(output, start_offset, code)
+            return self.galileo_serial(duplicates, output, start_offset, code)
         else:
-            return self.galileo_parallel(output, start_offset, code)
+            return self.galileo_parallel(duplicates, output, start_offset, code)
 
-    def galileo_serial(self, output, start_offset, code):
+    def galileo_serial(self, duplicates, output, start_offset, code):
         # place root c3 in the trie (key: c3, value: ret)
         self.inst_trie["c3"] = "ret"
 
@@ -173,14 +173,14 @@ class ROPHunter:
 
             if code[i:i+1] == b"\xc3":
                 self.prev_inst = "ret"
-                self.build_from(output, code, i + 1, "c3", start_offset + i)
+                self.build_from(duplicates, output, code, i + 1, "c3", start_offset + i)
 
         if(output):
             print("Total Gadgets found: " + str(self.num_gadgets) + "\n")
 
         return 
 
-    def galileo_parallel(self, output, start_offset, code):
+    def galileo_parallel(self, duplicates, output, start_offset, code):
         # determine num of cpus on machine for optimal parallelism
         N = mp.cpu_count()
         print("running on galileo in parallel on " + str(N) + " cpus:\n")
@@ -196,7 +196,7 @@ class ROPHunter:
                 if code[i:i+1] == b"\xc3":
                     log("worker " + str(i) + "\n")
                     self.prev_inst = "ret"
-                    result = p.apply_async(self.build_from, (code, i + 1, "c3", start_offset + i,), callback=accResults)
+                    result = p.apply_async(self.build_from, (duplicates, output, code, i + 1, "c3", start_offset + i,), callback=accResults)
                     result.get(timeout = 30)
                     log("finished function")
             p.close()
@@ -223,14 +223,20 @@ if __name__ == "__main__":
     # 0 for serial, 1 for parallelism
     arg_parser.add_argument("--parallel", help="Enable parallelism", choices=['0', '1'], default = '0')
     arg_parser.add_argument("--output", help="Whether to ouptut gadgets or not", choices=['0', '1'], default = '1')
+    arg_parser.add_argument("--duplicates", help="Whether to enumerate duplicate gadgets, enabling slows down performance", choices=['0', '1'], default = '1')
     args = arg_parser.parse_args()
 
     output = True
     if args.output == '0':
         output = False
+
+    duplicates = True
+    if args.duplicates == '0':
+        output = False
+
     rop_hunter = ROPHunter(arch_dict[args.arch], mode_dict[args.mode], args.parallel)
 
     [start_offset, code] = rop_hunter.read_binary(args.binary)
 
-    rop_hunter.galileo(output, start_offset, code)
+    rop_hunter.galileo(duplicates, output, start_offset, code)
    
