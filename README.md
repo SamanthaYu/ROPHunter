@@ -1,4 +1,6 @@
-# CMPT 479 Project - ROPHunter
+# ROPHunter
+- ROPHunter finds ROP (return-oriented programming) gadgets within a binary executable (e.g. libc)
+- Using these gadgets, ROPHunter can launch a [shell](shellcode/README.md) within a vulnerable program
 
 ## Setup
 - We'll be using the virtual machine from assignment 1: https://vault.sfu.ca/index.php/s/pq2sVjmUlmfBWwl

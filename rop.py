@@ -19,7 +19,7 @@ def accResults(result):
 
 class ROPHunter:
     def __init__(self, arch, mode, parallel):
-        # TODO: Customize the max inst length for other architectures besides x86_64
+        # TODO: Customize the max inst length for other architectures
         self.max_inst_len = 15
         self.max_inst_per_gadget = 3
         self.inst_trie = pygtrie.StringTrie()
