@@ -5,13 +5,19 @@ import unittest
 
 
 class ROPTest(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.parallel = False
+        self.duplicates = False
+        self.output = False
+
     # Uses the example instruction from the paper, "Geometry of Innocent Flesh on the Bone"
     def test_valid_inst(self):
-        rop_hunter = ROPHunter(CS_ARCH_X86, CS_MODE_64)
+        rop_hunter = ROPHunter(CS_ARCH_X86, CS_MODE_64, self.parallel)
         start_offset = 0x1000
         code = b"\xc7\x07\x00\x00\x00\x0f\x95\x45\xc3"
 
-        rop_hunter.galileo(start_offset, code)
+        rop_hunter.galileo(self.duplicates, self.output, start_offset, code)
 
         expected_trie = pygtrie.StringTrie()
         expected_trie["c3"] = "ret"
@@ -39,11 +45,11 @@ class ROPTest(unittest.TestCase):
         self.assertDictEqual(actual_inst_addr, expected_inst_addr)
 
     def test_multiple_ret(self):
-        rop_hunter = ROPHunter(CS_ARCH_X86, CS_MODE_64)
+        rop_hunter = ROPHunter(CS_ARCH_X86, CS_MODE_64, self.parallel)
         start_offset = 0x1000
         code = b"\x58\xc3\x95\x45\xc3"
 
-        rop_hunter.galileo(start_offset, code)
+        rop_hunter.galileo(self.duplicates, self.output, start_offset, code)
 
         expected_trie = pygtrie.StringTrie()
         expected_trie["c3"] = "ret"
@@ -63,10 +69,10 @@ class ROPTest(unittest.TestCase):
         self.assertDictEqual(actual_inst_addr, expected_inst_addr)
 
     def verify_boring_inst(self, code):
-        rop_hunter = ROPHunter(CS_ARCH_X86, CS_MODE_64)
+        rop_hunter = ROPHunter(CS_ARCH_X86, CS_MODE_64, self.parallel)
         start_offset = 0x1000
 
-        rop_hunter.galileo(start_offset, code)
+        rop_hunter.galileo(self.duplicates, self.output, start_offset, code)
 
         # ret is a boring instruction
         # ret appears in our trie, because it's the root
@@ -94,11 +100,11 @@ class ROPTest(unittest.TestCase):
         self.verify_boring_inst(code)
 
     def test_boring_unconditional_jmp(self):
-        rop_hunter = ROPHunter(CS_ARCH_X86, CS_MODE_64)
+        rop_hunter = ROPHunter(CS_ARCH_X86, CS_MODE_64, self.parallel)
         start_offset = 0x1000
         code = b"\xE9\xFC\xFF\xFF\xFF\xC3"  # jmp 1 <_main+0x1>; ret
 
-        rop_hunter.galileo(start_offset, code)
+        rop_hunter.galileo(self.duplicates, self.output, start_offset, code)
 
         # We cannot use verify_boring_inst() even though this instruction is goring.
         # Since this code snippet is long, it finds an additional gadget: cld; ret

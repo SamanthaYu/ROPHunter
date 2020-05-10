@@ -19,7 +19,7 @@ python3 rop.py --binary <binary> --arch <architecture> --mode <mode>
 ```
 - For example:
 ```
-python3 rop.py --binary /lib/i386-linux-gnu/libc-2.23.so --arch x86 --mode 32
+python3 rop.py --binary /lib/i386-linux-gnu/libc-2.23.so --arch x86 --mode 32 --output
 ```
 *Warning, this step may take a few minutes* 
 
